@@ -1,0 +1,763 @@
+// Mitigation Ladder - Enhanced Visual Hierarchy
+// Shows all historical signals with graduated sizes
+// V6 1H: Chart runs in LTF, but ladder detection uses 1H timeframe
+// All signals, markers, stop losses, and streaks are based on 1H bars
+// MTF Status Table showing ladder state across 1m, 3m, 5m, 15m, 1H, 1D, 1W
+
+//@version=5
+indicator("Mitigation Ladder - Enhanced V6 1H", overlay=true, max_bars_back=500)
+
+// ════════════════════════════════════════════════════════════════════════════
+// DETECTION TIMEFRAME (locked to 1H)
+// ════════════════════════════════════════════════════════════════════════════
+
+DETECTION_TF = "60"  // 1-Hour - all ladder detection runs on this TF
+
+// ════════════════════════════════════════════════════════════════════════════
+// INPUT PARAMETERS
+// ════════════════════════════════════════════════════════════════════════════
+
+// Display options
+show_labels = input.bool(true, "Show Ladder Markers", group="Display", tooltip="Show markers for ladder patterns")
+show_bull_signals = input.bool(true, "Show Bullish Signals", group="Display", tooltip="Enable/disable bullish ladder detection")
+show_bear_signals = input.bool(true, "Show Bearish Signals", group="Display", tooltip="Enable/disable bearish ladder detection")
+show_stop_loss = input.bool(true, "Show Stop Loss Lines", group="Display", tooltip="Show horizontal line at 1H bar-2 low for bullish (stop below) and 1H bar-2 high for bearish (stop above)")
+show_premium_signals = input.bool(true, "Show Premium Signals", group="Display", tooltip="Mark signals that are higher (bullish) or lower (bearish) than the previous signal — indicates stronger trend")
+max_historical_signals = input.int(10, "Max Historical Signals", minval=2, maxval=100, group="Display", tooltip="Maximum number of historical signals to display (older ones will be removed)")
+num_unmitigated_sl = input.int(5, "Number of Unmitigated SL to Show", minval=1, maxval=100, group="Display", tooltip="Always show this many unmitigated SL lines (backtracks if recent ones are hit)")
+
+// MTF Status Table options
+show_mtf_table = input.bool(true, "Show MTF Status Table", group="MTF Status Table", tooltip="Display multi-timeframe ladder status")
+mtf_table_position = input.string("Top Right", "MTF Table Position", options=["Top Left", "Top Right", "Bottom Left", "Bottom Right", "Middle Left", "Middle Right"], group="MTF Status Table")
+mtf_table_size = input.string("Normal", "MTF Table Size", options=["Tiny", "Small", "Normal", "Large"], group="MTF Status Table")
+mtf_table_bg_color = input.color(color.new(#1a1a2e, 10), "MTF Table Background", group="MTF Status Table")
+mtf_table_border_color = input.color(color.new(#4a4a6a, 0), "MTF Table Border", group="MTF Status Table")
+
+// Current TF Status Table options
+show_status_table = input.bool(true, "Show 1H Detection Table", group="1H Detection Table", tooltip="Display 1H ladder detection detailed status")
+table_position = input.string("Bottom Right", "Detection Table Position", options=["Top Left", "Top Right", "Bottom Left", "Bottom Right", "Middle Left", "Middle Right"], group="1H Detection Table")
+table_size = input.string("Small", "Detection Table Size", options=["Tiny", "Small", "Normal", "Large"], group="1H Detection Table")
+table_bg_color = input.color(color.new(#1a1a2e, 10), "Table Background", group="1H Detection Table")
+table_border_color = input.color(color.new(#4a4a6a, 0), "Table Border", group="1H Detection Table")
+
+// Marker sizes
+recent_marker_size = input.string("Normal", "Recent 2 Marker Size", options=["Tiny", "Small", "Normal", "Large", "Huge"], group="Marker Style")
+historical_marker_size = input.string("Tiny", "Historical Marker Size", options=["Auto", "Tiny", "Small", "Normal"], group="Marker Style", tooltip="Auto = Tiny for 3rd+ oldest signals")
+
+// Stop Loss Style
+bull_sl_color = input.color(color.green, "Bullish SL Color", group="Stop Loss Style")
+bear_sl_color = input.color(color.red, "Bearish SL Color", group="Stop Loss Style")
+sl_hit_color = input.color(color.gray, "SL Hit (Mitigated) Color", group="Stop Loss Style")
+sl_line_width = input.int(2, "Stop Loss Line Width", minval=1, maxval=5, group="Stop Loss Style")
+sl_line_style = input.string("Solid", "Stop Loss Line Style", options=["Solid", "Dashed", "Dotted"], group="Stop Loss Style")
+
+// Transparency for historical markers
+historical_transparency = input.int(30, "Historical Marker Transparency", minval=0, maxval=90, group="Marker Style", tooltip="0 = opaque, 90 = very faint")
+
+// Premium signal style
+bull_arrow = input.string("⬆", "Bullish Arrow", group="Premium Signals", tooltip="Arrow symbol for bullish streak")
+bear_arrow = input.string("⬇", "Bearish Arrow", group="Premium Signals", tooltip="Arrow symbol for bearish streak")
+
+// Optimal entry highlight (candle highlight for streak = 1)
+show_optimal_beam = input.bool(true, "Show Optimal Entry Highlight", group="Premium Signals", tooltip="Highlight candle on ⬆ or ⬇ signals (streak = 1)")
+num_recent_highlights = input.int(1, "Number of Recent Highlights", minval=1, maxval=10, group="Premium Signals", tooltip="How many recent optimal entries to highlight (1 = only most recent)")
+bull_beam_color = input.color(color.new(color.green, 70), "Bullish Highlight Color", group="Premium Signals")
+bear_beam_color = input.color(color.new(color.red, 70), "Bearish Highlight Color", group="Premium Signals")
+
+// Ladder Rules (informational)
+rules_info = input.string("──────── 1H DETECTION MODE ────────\nChart can run in any LTF, but ladder detection\nuses 1-Hour timeframe data via request.security.\nSignals fire when a 1H bar closes confirming the pattern.\n\n──────── BULLISH LADDER RULES (1H) ────────\n1. Sequential higher lows: 1H low[0] > 1H low[-1] > 1H low[-2]\n2. Mitigation: 1H high[-1] > 1H high[-2] OR 1H high[0] > 1H high[-2]\n3. Confirmation: 1H close[0] > 1H close[-1] AND 1H close[0] > 1H close[-2]\n\n──────── BEARISH LADDER RULES (1H) ────────\n1. Sequential lower highs: 1H high[0] < 1H high[-1] < 1H high[-2]\n2. Mitigation: 1H low[-1] < 1H low[-2] OR 1H low[0] < 1H low[-2]\n3. Confirmation: 1H close[0] < 1H close[-1] AND 1H close[0] < 1H close[-2]\n\n──────── TRADE RULES ────────\n• Bullish 1H ladder active → DO NOT enter SHORT trades\n• Bearish 1H ladder active → DO NOT enter LONG trades", "═══════ 1H LADDER PATTERN RULES ═══════", group="📖 Rules & Instructions", tooltip="Detection always uses 1H bars regardless of chart timeframe.")
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ════════════════════════════════════════════════════════════════════════════
+
+// Convert line style string to Pine Script line style
+get_line_style(style_name) =>
+    style_name == "Dashed" ? line.style_dashed : style_name == "Dotted" ? line.style_dotted : line.style_solid
+
+// Convert size string to Pine Script size
+get_size(size_name) =>
+    size_name == "Tiny" ? size.tiny : size_name == "Small" ? size.small : size_name == "Large" ? size.large : size_name == "Huge" ? size.huge : size.normal
+
+// Get table position
+get_table_position(pos_name) =>
+    pos_name == "Top Left" ? position.top_left : pos_name == "Top Right" ? position.top_right : pos_name == "Bottom Left" ? position.bottom_left : pos_name == "Bottom Right" ? position.bottom_right : pos_name == "Middle Left" ? position.middle_left : position.middle_right
+
+// ════════════════════════════════════════════════════════════════════════════
+// LADDER DETECTION FUNCTION (reusable for MTF)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Bullish Ladder Detection
+detect_bull_ladder(float lo, float lo1, float lo2, float hi, float hi1, float hi2, float cl, float cl1, float cl2) =>
+    higher_lows = lo > lo1 and lo1 > lo2
+    mitigation = hi1 > hi2 or hi > hi2
+    close_highest = cl > cl1 and cl > cl2
+    higher_lows and mitigation and close_highest
+
+// Bearish Ladder Detection
+detect_bear_ladder(float hi, float hi1, float hi2, float lo, float lo1, float lo2, float cl, float cl1, float cl2) =>
+    lower_highs = hi < hi1 and hi1 < hi2
+    mitigation = lo1 < lo2 or lo < lo2
+    close_lowest = cl < cl1 and cl < cl2
+    lower_highs and mitigation and close_lowest
+
+// ════════════════════════════════════════════════════════════════════════════
+// MULTI-TIMEFRAME LADDER DETECTION
+// ════════════════════════════════════════════════════════════════════════════
+
+// 1-Minute
+[lo_1m, lo1_1m, lo2_1m] = request.security(syminfo.tickerid, "1", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_1m, hi1_1m, hi2_1m] = request.security(syminfo.tickerid, "1", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_1m, cl1_1m, cl2_1m] = request.security(syminfo.tickerid, "1", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_1m = detect_bull_ladder(lo_1m, lo1_1m, lo2_1m, hi_1m, hi1_1m, hi2_1m, cl_1m, cl1_1m, cl2_1m)
+bear_1m = detect_bear_ladder(hi_1m, hi1_1m, hi2_1m, lo_1m, lo1_1m, lo2_1m, cl_1m, cl1_1m, cl2_1m)
+
+// 3-Minute
+[lo_3m, lo1_3m, lo2_3m] = request.security(syminfo.tickerid, "3", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_3m, hi1_3m, hi2_3m] = request.security(syminfo.tickerid, "3", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_3m, cl1_3m, cl2_3m] = request.security(syminfo.tickerid, "3", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_3m = detect_bull_ladder(lo_3m, lo1_3m, lo2_3m, hi_3m, hi1_3m, hi2_3m, cl_3m, cl1_3m, cl2_3m)
+bear_3m = detect_bear_ladder(hi_3m, hi1_3m, hi2_3m, lo_3m, lo1_3m, lo2_3m, cl_3m, cl1_3m, cl2_3m)
+
+// 5-Minute
+[lo_5m, lo1_5m, lo2_5m] = request.security(syminfo.tickerid, "5", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_5m, hi1_5m, hi2_5m] = request.security(syminfo.tickerid, "5", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_5m, cl1_5m, cl2_5m] = request.security(syminfo.tickerid, "5", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_5m = detect_bull_ladder(lo_5m, lo1_5m, lo2_5m, hi_5m, hi1_5m, hi2_5m, cl_5m, cl1_5m, cl2_5m)
+bear_5m = detect_bear_ladder(hi_5m, hi1_5m, hi2_5m, lo_5m, lo1_5m, lo2_5m, cl_5m, cl1_5m, cl2_5m)
+
+// 15-Minute
+[lo_15m, lo1_15m, lo2_15m] = request.security(syminfo.tickerid, "15", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_15m, hi1_15m, hi2_15m] = request.security(syminfo.tickerid, "15", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_15m, cl1_15m, cl2_15m] = request.security(syminfo.tickerid, "15", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_15m = detect_bull_ladder(lo_15m, lo1_15m, lo2_15m, hi_15m, hi1_15m, hi2_15m, cl_15m, cl1_15m, cl2_15m)
+bear_15m = detect_bear_ladder(hi_15m, hi1_15m, hi2_15m, lo_15m, lo1_15m, lo2_15m, cl_15m, cl1_15m, cl2_15m)
+
+// 1-Hour (also used for primary detection)
+[lo_1h, lo1_1h, lo2_1h] = request.security(syminfo.tickerid, DETECTION_TF, [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_1h, hi1_1h, hi2_1h] = request.security(syminfo.tickerid, DETECTION_TF, [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_1h, cl1_1h, cl2_1h] = request.security(syminfo.tickerid, DETECTION_TF, [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_1h = detect_bull_ladder(lo_1h, lo1_1h, lo2_1h, hi_1h, hi1_1h, hi2_1h, cl_1h, cl1_1h, cl2_1h)
+bear_1h = detect_bear_ladder(hi_1h, hi1_1h, hi2_1h, lo_1h, lo1_1h, lo2_1h, cl_1h, cl1_1h, cl2_1h)
+
+// 1-Day
+[lo_1d, lo1_1d, lo2_1d] = request.security(syminfo.tickerid, "D", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_1d, hi1_1d, hi2_1d] = request.security(syminfo.tickerid, "D", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_1d, cl1_1d, cl2_1d] = request.security(syminfo.tickerid, "D", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_1d = detect_bull_ladder(lo_1d, lo1_1d, lo2_1d, hi_1d, hi1_1d, hi2_1d, cl_1d, cl1_1d, cl2_1d)
+bear_1d = detect_bear_ladder(hi_1d, hi1_1d, hi2_1d, lo_1d, lo1_1d, lo2_1d, cl_1d, cl1_1d, cl2_1d)
+
+// 1-Week
+[lo_1w, lo1_1w, lo2_1w] = request.security(syminfo.tickerid, "W", [low, low[1], low[2]], lookahead=barmerge.lookahead_off)
+[hi_1w, hi1_1w, hi2_1w] = request.security(syminfo.tickerid, "W", [high, high[1], high[2]], lookahead=barmerge.lookahead_off)
+[cl_1w, cl1_1w, cl2_1w] = request.security(syminfo.tickerid, "W", [close, close[1], close[2]], lookahead=barmerge.lookahead_off)
+bull_1w = detect_bull_ladder(lo_1w, lo1_1w, lo2_1w, hi_1w, hi1_1w, hi2_1w, cl_1w, cl1_1w, cl2_1w)
+bear_1w = detect_bear_ladder(hi_1w, hi1_1w, hi2_1w, lo_1w, lo1_1w, lo2_1w, cl_1w, cl1_1w, cl2_1w)
+
+// ════════════════════════════════════════════════════════════════════════════
+// PRIMARY DETECTION (uses 1H data regardless of chart TF)
+// ════════════════════════════════════════════════════════════════════════════
+
+bull_active = bull_1h
+bear_active = bear_1h
+
+// 1H bar values used for marker placement and SL levels
+detect_high = hi_1h
+detect_low = lo_1h
+detect_high_2 = hi2_1h  // 1H bar-2 high (bearish SL)
+detect_low_2 = lo2_1h   // 1H bar-2 low (bullish SL)
+
+// ════════════════════════════════════════════════════════════════════════════
+// MTF BIAS TRACKING (persistent state for each timeframe)
+// ════════════════════════════════════════════════════════════════════════════
+
+var string bias_1m = "—"
+var string bias_3m = "—"
+var string bias_5m = "—"
+var string bias_15m = "—"
+var string bias_1h = "—"
+var string bias_1d = "—"
+var string bias_1w = "—"
+
+// Update biases when new signals appear
+if bull_1m and not bull_1m[1]
+    bias_1m := "BULL"
+if bear_1m and not bear_1m[1]
+    bias_1m := "BEAR"
+
+if bull_3m and not bull_3m[1]
+    bias_3m := "BULL"
+if bear_3m and not bear_3m[1]
+    bias_3m := "BEAR"
+
+if bull_5m and not bull_5m[1]
+    bias_5m := "BULL"
+if bear_5m and not bear_5m[1]
+    bias_5m := "BEAR"
+
+if bull_15m and not bull_15m[1]
+    bias_15m := "BULL"
+if bear_15m and not bear_15m[1]
+    bias_15m := "BEAR"
+
+if bull_1h and not bull_1h[1]
+    bias_1h := "BULL"
+if bear_1h and not bear_1h[1]
+    bias_1h := "BEAR"
+
+if bull_1d and not bull_1d[1]
+    bias_1d := "BULL"
+if bear_1d and not bear_1d[1]
+    bias_1d := "BEAR"
+
+if bull_1w and not bull_1w[1]
+    bias_1w := "BULL"
+if bear_1w and not bear_1w[1]
+    bias_1w := "BEAR"
+
+// ════════════════════════════════════════════════════════════════════════════
+// SIGNAL TRACKING (1H Detection)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Track when new signals appear (transition from false to true on the LTF bar
+// where the 1H bar that produced the signal first becomes available)
+new_bull_signal = bull_active and not bull_active[1]
+new_bear_signal = bear_active and not bear_active[1]
+
+// Arrays to store label objects
+var array<label> bull_labels = array.new_label(0)
+var array<label> bear_labels = array.new_label(0)
+
+// Arrays to track signal price levels (for premium signal detection)
+var array<float> bull_signal_levels = array.new_float(0)
+var array<float> bear_signal_levels = array.new_float(0)
+
+// Streak counters (ladder of ladders)
+var int bull_streak = 0
+var int bear_streak = 0
+
+// Total signal counters (persistent)
+var int total_bull_signals = 0
+var int total_bear_signals = 0
+
+// Track bars since last signal
+var int bars_since_bull = 0
+var int bars_since_bear = 0
+
+// ════════════════════════════════════════════════════════════════════════════
+// STOP LOSS TRACKING (V4 - Always show N unmitigated)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Store ALL historical SL data (levels, bar indices, hit status)
+var array<float> bull_sl_all_levels = array.new_float(0)
+var array<int> bull_sl_all_bars = array.new_int(0)
+var array<bool> bull_sl_all_hit = array.new_bool(0)
+
+var array<float> bear_sl_all_levels = array.new_float(0)
+var array<int> bear_sl_all_bars = array.new_int(0)
+var array<bool> bear_sl_all_hit = array.new_bool(0)
+
+// Display lines and labels (will be redrawn)
+var array<line> bull_sl_lines = array.new_line(0)
+var array<label> bull_sl_labels = array.new_label(0)
+var array<line> bear_sl_lines = array.new_line(0)
+var array<label> bear_sl_labels = array.new_label(0)
+
+// Count unmitigated SLs
+var int bull_unmitigated_count = 0
+var int bear_unmitigated_count = 0
+
+// ════════════════════════════════════════════════════════════════════════════
+// VISUALS - GRADUATED MARKER SIZES
+// ════════════════════════════════════════════════════════════════════════════
+
+// Update bars since counters
+bars_since_bull := bars_since_bull + 1
+bars_since_bear := bars_since_bear + 1
+
+// Bullish markers (green dots with size hierarchy)
+if show_labels and show_bull_signals and new_bull_signal
+    // Reset bars since counter
+    bars_since_bull := 0
+    total_bull_signals := total_bull_signals + 1
+
+    // Determine size and transparency based on position in array
+    current_count = array.size(bull_labels)
+
+    // Check if this is higher than previous (streak continues)
+    if show_premium_signals and array.size(bull_signal_levels) > 0
+        prev_level = array.get(bull_signal_levels, array.size(bull_signal_levels) - 1)
+        if detect_high > prev_level
+            bull_streak := bull_streak + 1
+        else
+            bull_streak := 0
+
+    // Track this signal's level (1H high)
+    array.push(bull_signal_levels, detect_high)
+    if array.size(bull_signal_levels) > max_historical_signals
+        array.shift(bull_signal_levels)
+
+    // Build marker text - dot only if no streak, arrow only if streak
+    marker_text = ""
+    if bull_streak == 0
+        marker_text := "🟢"
+    else if bull_streak == 1
+        marker_text := bull_arrow
+    else
+        marker_text := bull_arrow + str.tostring(bull_streak)
+    new_label = label.new(
+         x=bar_index,
+         y=detect_high,
+         text=marker_text,
+         style=label.style_label_down,
+         color=color.new(color.white, 100),
+         textcolor=color.green,
+         size=get_size(recent_marker_size)
+     )
+
+    array.push(bull_labels, new_label)
+
+    // Update all existing markers to show visual hierarchy
+    total_labels = array.size(bull_labels)
+    if total_labels > 0
+        for i = 0 to total_labels - 1
+            lbl = array.get(bull_labels, i)
+            position_from_end = total_labels - 1 - i  // 0 = most recent, 1 = second most recent, etc.
+
+            if position_from_end >= 2
+                // Historical markers (3rd oldest and beyond)
+                marker_size = historical_marker_size == "Auto" ? size.tiny : get_size(historical_marker_size)
+                label.set_size(lbl, marker_size)
+                label.set_textcolor(lbl, color.new(color.green, historical_transparency))
+            else
+                // Most recent 2 markers
+                label.set_size(lbl, get_size(recent_marker_size))
+                label.set_textcolor(lbl, color.green)
+
+    // Remove oldest if exceeding max
+    if array.size(bull_labels) > max_historical_signals
+        old_label = array.shift(bull_labels)
+        label.delete(old_label)
+
+// Bearish markers (red dots with size hierarchy)
+if show_labels and show_bear_signals and new_bear_signal
+    // Reset bars since counter
+    bars_since_bear := 0
+    total_bear_signals := total_bear_signals + 1
+
+    // Determine size and transparency based on position in array
+    current_count = array.size(bear_labels)
+
+    // Check if this is lower than previous (streak continues)
+    if show_premium_signals and array.size(bear_signal_levels) > 0
+        prev_level = array.get(bear_signal_levels, array.size(bear_signal_levels) - 1)
+        if detect_low < prev_level
+            bear_streak := bear_streak + 1
+        else
+            bear_streak := 0
+
+    // Track this signal's level (1H low)
+    array.push(bear_signal_levels, detect_low)
+    if array.size(bear_signal_levels) > max_historical_signals
+        array.shift(bear_signal_levels)
+
+    // Build marker text - dot only if no streak, arrow only if streak
+    marker_text = ""
+    if bear_streak == 0
+        marker_text := "🔴"
+    else if bear_streak == 1
+        marker_text := bear_arrow
+    else
+        marker_text := bear_arrow + str.tostring(bear_streak)
+    new_label = label.new(
+         x=bar_index,
+         y=detect_low,
+         text=marker_text,
+         style=label.style_label_up,
+         color=color.new(color.white, 100),
+         textcolor=color.red,
+         size=get_size(recent_marker_size)
+     )
+
+    array.push(bear_labels, new_label)
+
+    // Update all existing markers to show visual hierarchy
+    total_labels = array.size(bear_labels)
+    if total_labels > 0
+        for i = 0 to total_labels - 1
+            lbl = array.get(bear_labels, i)
+            position_from_end = total_labels - 1 - i  // 0 = most recent, 1 = second most recent, etc.
+
+            if position_from_end >= 2
+                // Historical markers (3rd oldest and beyond)
+                marker_size = historical_marker_size == "Auto" ? size.tiny : get_size(historical_marker_size)
+                label.set_size(lbl, marker_size)
+                label.set_textcolor(lbl, color.new(color.red, historical_transparency))
+            else
+                // Most recent 2 markers
+                label.set_size(lbl, get_size(recent_marker_size))
+                label.set_textcolor(lbl, color.red)
+
+    // Remove oldest if exceeding max
+    if array.size(bear_labels) > max_historical_signals
+        old_label = array.shift(bear_labels)
+        label.delete(old_label)
+
+// ════════════════════════════════════════════════════════════════════════════
+// STOP LOSS TRACKING - Record new SL levels (1H bar-2)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Bullish ladder - record new SL (1H bar-2 low)
+if show_stop_loss and show_bull_signals and new_bull_signal
+    sl_level = detect_low_2
+    array.push(bull_sl_all_levels, sl_level)
+    array.push(bull_sl_all_bars, bar_index)
+    array.push(bull_sl_all_hit, false)
+
+    // Limit history size
+    if array.size(bull_sl_all_levels) > 100
+        array.shift(bull_sl_all_levels)
+        array.shift(bull_sl_all_bars)
+        array.shift(bull_sl_all_hit)
+
+// Bearish ladder - record new SL (1H bar-2 high)
+if show_stop_loss and show_bear_signals and new_bear_signal
+    sl_level = detect_high_2
+    array.push(bear_sl_all_levels, sl_level)
+    array.push(bear_sl_all_bars, bar_index)
+    array.push(bear_sl_all_hit, false)
+
+    // Limit history size
+    if array.size(bear_sl_all_levels) > 100
+        array.shift(bear_sl_all_levels)
+        array.shift(bear_sl_all_bars)
+        array.shift(bear_sl_all_hit)
+
+// ════════════════════════════════════════════════════════════════════════════
+// STOP LOSS - Check for mitigation (LTF wick touch — more responsive)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Check bullish SL mitigation - any LTF wick that breaks the level mitigates it
+if array.size(bull_sl_all_levels) > 0
+    for i = 0 to array.size(bull_sl_all_levels) - 1
+        if not array.get(bull_sl_all_hit, i)
+            sl_level = array.get(bull_sl_all_levels, i)
+            if low < sl_level
+                array.set(bull_sl_all_hit, i, true)
+
+// Check bearish SL mitigation
+if array.size(bear_sl_all_levels) > 0
+    for i = 0 to array.size(bear_sl_all_levels) - 1
+        if not array.get(bear_sl_all_hit, i)
+            sl_level = array.get(bear_sl_all_levels, i)
+            if high > sl_level
+                array.set(bear_sl_all_hit, i, true)
+
+// ════════════════════════════════════════════════════════════════════════════
+// STOP LOSS - Draw N most recent UNMITIGATED lines
+// ════════════════════════════════════════════════════════════════════════════
+
+// Redraw SL lines on each bar (to always show N unmitigated)
+// Clear existing lines
+if array.size(bull_sl_lines) > 0
+    for i = 0 to array.size(bull_sl_lines) - 1
+        line.delete(array.get(bull_sl_lines, i))
+    array.clear(bull_sl_lines)
+
+if array.size(bull_sl_labels) > 0
+    for i = 0 to array.size(bull_sl_labels) - 1
+        label.delete(array.get(bull_sl_labels, i))
+    array.clear(bull_sl_labels)
+
+if array.size(bear_sl_lines) > 0
+    for i = 0 to array.size(bear_sl_lines) - 1
+        line.delete(array.get(bear_sl_lines, i))
+    array.clear(bear_sl_lines)
+
+if array.size(bear_sl_labels) > 0
+    for i = 0 to array.size(bear_sl_labels) - 1
+        label.delete(array.get(bear_sl_labels, i))
+    array.clear(bear_sl_labels)
+
+// Reset unmitigated counters
+bull_unmitigated_count := 0
+bear_unmitigated_count := 0
+
+// Count all unmitigated bullish SLs
+if array.size(bull_sl_all_levels) > 0
+    for i = 0 to array.size(bull_sl_all_levels) - 1
+        if not array.get(bull_sl_all_hit, i)
+            bull_unmitigated_count := bull_unmitigated_count + 1
+
+// Count all unmitigated bearish SLs
+if array.size(bear_sl_all_levels) > 0
+    for i = 0 to array.size(bear_sl_all_levels) - 1
+        if not array.get(bear_sl_all_hit, i)
+            bear_unmitigated_count := bear_unmitigated_count + 1
+
+// Find and draw N most recent unmitigated bullish SL lines
+if show_stop_loss and show_bull_signals and array.size(bull_sl_all_levels) > 0
+    drawn_count = 0
+    for i = array.size(bull_sl_all_levels) - 1 to 0
+        if drawn_count >= num_unmitigated_sl
+            break
+        if not array.get(bull_sl_all_hit, i)
+            sl_level = array.get(bull_sl_all_levels, i)
+            sl_bar = array.get(bull_sl_all_bars, i)
+            new_line = line.new(x1=sl_bar, y1=sl_level, x2=bar_index, y2=sl_level, color=bull_sl_color, width=sl_line_width, style=get_line_style(sl_line_style), extend=extend.right)
+            new_label = label.new(x=bar_index, y=sl_level, text="SL ↓", style=label.style_label_left, color=bull_sl_color, textcolor=color.white, size=size.small)
+            array.push(bull_sl_lines, new_line)
+            array.push(bull_sl_labels, new_label)
+            drawn_count := drawn_count + 1
+
+// Find and draw N most recent unmitigated bearish SL lines
+if show_stop_loss and show_bear_signals and array.size(bear_sl_all_levels) > 0
+    drawn_count = 0
+    for i = array.size(bear_sl_all_levels) - 1 to 0
+        if drawn_count >= num_unmitigated_sl
+            break
+        if not array.get(bear_sl_all_hit, i)
+            sl_level = array.get(bear_sl_all_levels, i)
+            sl_bar = array.get(bear_sl_all_bars, i)
+            new_line = line.new(x1=sl_bar, y1=sl_level, x2=bar_index, y2=sl_level, color=bear_sl_color, width=sl_line_width, style=get_line_style(sl_line_style), extend=extend.right)
+            new_label = label.new(x=bar_index, y=sl_level, text="SL ↑", style=label.style_label_left, color=bear_sl_color, textcolor=color.white, size=size.small)
+            array.push(bear_sl_lines, new_line)
+            array.push(bear_sl_labels, new_label)
+            drawn_count := drawn_count + 1
+
+// ════════════════════════════════════════════════════════════════════════════
+// OPTIMAL ENTRY BACKGROUND HIGHLIGHT
+// ════════════════════════════════════════════════════════════════════════════
+
+// Detect new optimal entries
+is_bull_optimal_now = show_bull_signals and new_bull_signal and bull_streak == 1
+is_bear_optimal_now = show_bear_signals and new_bear_signal and bear_streak == 1
+
+// Track recent optimal entry bar indices using arrays
+var array<int> bull_optimal_bars = array.new_int(0)
+var array<int> bear_optimal_bars = array.new_int(0)
+
+// Update bullish tracking
+if is_bull_optimal_now
+    array.push(bull_optimal_bars, bar_index)
+    // Keep only the most recent N
+    if array.size(bull_optimal_bars) > num_recent_highlights
+        array.shift(bull_optimal_bars)
+
+// Clear bullish when streak resets
+if show_bull_signals and new_bull_signal and bull_streak == 0
+    array.clear(bull_optimal_bars)
+
+// Update bearish tracking
+if is_bear_optimal_now
+    array.push(bear_optimal_bars, bar_index)
+    // Keep only the most recent N
+    if array.size(bear_optimal_bars) > num_recent_highlights
+        array.shift(bear_optimal_bars)
+
+// Clear bearish when streak resets
+if show_bear_signals and new_bear_signal and bear_streak == 0
+    array.clear(bear_optimal_bars)
+
+// Check if current bar should be highlighted
+show_bull_bg = show_optimal_beam and array.includes(bull_optimal_bars, bar_index)
+show_bear_bg = show_optimal_beam and array.includes(bear_optimal_bars, bar_index)
+
+// Apply vertical background color (auto-scales with candle width)
+bgcolor(show_bull_bg ? bull_beam_color : na, title="Bullish Optimal Entry")
+bgcolor(show_bear_bg ? bear_beam_color : na, title="Bearish Optimal Entry")
+
+// ════════════════════════════════════════════════════════════════════════════
+// MTF STATUS TABLE
+// ════════════════════════════════════════════════════════════════════════════
+
+// Helper function to get bias color
+get_bias_color(string bias) =>
+    bias == "BULL" ? color.green : bias == "BEAR" ? color.red : color.gray
+
+// Helper function to get bias display text
+get_bias_text(string bias) =>
+    bias == "BULL" ? "🟢 BULL" : bias == "BEAR" ? "🔴 BEAR" : "⚪ —"
+
+// Helper function to get trade rule
+get_trade_rule(string bias) =>
+    bias == "BULL" ? "⛔ NO SHORT" : bias == "BEAR" ? "⛔ NO LONG" : "✅ ANY"
+
+// Create MTF status table
+var table mtf_tbl = table.new(get_table_position(mtf_table_position), 2, 9, bgcolor=mtf_table_bg_color, border_color=mtf_table_border_color, border_width=1, frame_color=mtf_table_border_color, frame_width=2)
+
+if show_mtf_table and barstate.islast
+    tbl_size = get_size(mtf_table_size)
+
+    // Header row
+    table.cell(mtf_tbl, 0, 0, "📊 MTF LADDER", text_color=color.white, text_size=tbl_size, bgcolor=color.new(#2d2d4d, 0), text_halign=text.align_center)
+    table.merge_cells(mtf_tbl, 0, 0, 1, 0)
+
+    // Column headers
+    table.cell(mtf_tbl, 0, 1, "TF", text_color=color.white, text_size=tbl_size, bgcolor=color.new(#3d3d5d, 0), text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 1, "BIAS", text_color=color.white, text_size=tbl_size, bgcolor=color.new(#3d3d5d, 0), text_halign=text.align_center)
+
+    // 1m row
+    table.cell(mtf_tbl, 0, 2, "1m", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 2, get_bias_text(bias_1m), text_color=get_bias_color(bias_1m), text_size=tbl_size, text_halign=text.align_center)
+
+    // 3m row
+    table.cell(mtf_tbl, 0, 3, "3m", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 3, get_bias_text(bias_3m), text_color=get_bias_color(bias_3m), text_size=tbl_size, text_halign=text.align_center)
+
+    // 5m row
+    table.cell(mtf_tbl, 0, 4, "5m", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 4, get_bias_text(bias_5m), text_color=get_bias_color(bias_5m), text_size=tbl_size, text_halign=text.align_center)
+
+    // 15m row
+    table.cell(mtf_tbl, 0, 5, "15m", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 5, get_bias_text(bias_15m), text_color=get_bias_color(bias_15m), text_size=tbl_size, text_halign=text.align_center)
+
+    // 1H row (highlighted as primary detection TF)
+    table.cell(mtf_tbl, 0, 6, "1H ★", text_color=color.yellow, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 6, get_bias_text(bias_1h), text_color=get_bias_color(bias_1h), text_size=tbl_size, text_halign=text.align_center)
+
+    // 1D row
+    table.cell(mtf_tbl, 0, 7, "1D", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 7, get_bias_text(bias_1d), text_color=get_bias_color(bias_1d), text_size=tbl_size, text_halign=text.align_center)
+
+    // 1W row
+    table.cell(mtf_tbl, 0, 8, "1W", text_color=color.white, text_size=tbl_size, text_halign=text.align_center)
+    table.cell(mtf_tbl, 1, 8, get_bias_text(bias_1w), text_color=get_bias_color(bias_1w), text_size=tbl_size, text_halign=text.align_center)
+
+// ════════════════════════════════════════════════════════════════════════════
+// 1H DETECTION STATUS TABLE
+// ════════════════════════════════════════════════════════════════════════════
+
+// Determine current bias based on most recent signal
+var string current_bias = "NEUTRAL"
+var color bias_color = color.gray
+
+// Track which signal was more recent
+if new_bull_signal
+    current_bias := "BULLISH"
+    bias_color := color.green
+if new_bear_signal
+    current_bias := "BEARISH"
+    bias_color := color.red
+
+// Check if bias is still valid (SL not hit)
+var bool bias_invalidated = false
+
+if current_bias == "BULLISH" and array.size(bull_sl_all_levels) > 0
+    for i = array.size(bull_sl_all_levels) - 1 to 0
+        if not array.get(bull_sl_all_hit, i)
+            sl_level = array.get(bull_sl_all_levels, i)
+            if low < sl_level
+                bias_invalidated := true
+                break
+        break
+
+if current_bias == "BEARISH" and array.size(bear_sl_all_levels) > 0
+    for i = array.size(bear_sl_all_levels) - 1 to 0
+        if not array.get(bear_sl_all_hit, i)
+            sl_level = array.get(bear_sl_all_levels, i)
+            if high > sl_level
+                bias_invalidated := true
+                break
+        break
+
+// Get nearest SL level for display
+nearest_bull_sl = 0.0
+nearest_bear_sl = 0.0
+
+if array.size(bull_sl_all_levels) > 0
+    for i = array.size(bull_sl_all_levels) - 1 to 0
+        if not array.get(bull_sl_all_hit, i)
+            nearest_bull_sl := array.get(bull_sl_all_levels, i)
+            break
+
+if array.size(bear_sl_all_levels) > 0
+    for i = array.size(bear_sl_all_levels) - 1 to 0
+        if not array.get(bear_sl_all_hit, i)
+            nearest_bear_sl := array.get(bear_sl_all_levels, i)
+            break
+
+// Create 1H detection status table
+var table status_tbl = table.new(get_table_position(table_position), 2, 11, bgcolor=table_bg_color, border_color=table_border_color, border_width=1, frame_color=table_border_color, frame_width=2)
+
+if show_status_table and barstate.islast
+    tbl_size = get_size(table_size)
+
+    // Header
+    table.cell(status_tbl, 0, 0, "📊 1H DETECTION (Chart: " + timeframe.period + ")", text_color=color.white, text_size=tbl_size, bgcolor=color.new(#2d2d4d, 0), text_halign=text.align_center)
+    table.merge_cells(status_tbl, 0, 0, 1, 0)
+
+    // Current Bias
+    bias_text = current_bias
+    if current_bias == "BULLISH"
+        bias_text := "🟢 BULLISH"
+        if bull_streak > 0
+            bias_text := bias_text + " " + bull_arrow + str.tostring(bull_streak)
+    else if current_bias == "BEARISH"
+        bias_text := "🔴 BEARISH"
+        if bear_streak > 0
+            bias_text := bias_text + " " + bear_arrow + str.tostring(bear_streak)
+    else
+        bias_text := "⚪ NEUTRAL"
+
+    table.cell(status_tbl, 0, 1, "Current Bias", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    table.cell(status_tbl, 1, 1, bias_text, text_color=bias_color, text_size=tbl_size, text_halign=text.align_right)
+
+    // Trade Direction
+    trade_text = current_bias == "BULLISH" ? "⛔ NO SHORTS" : current_bias == "BEARISH" ? "⛔ NO LONGS" : "✅ ANY"
+    trade_color = current_bias == "NEUTRAL" ? color.green : color.orange
+    table.cell(status_tbl, 0, 2, "Trade Rule", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    table.cell(status_tbl, 1, 2, trade_text, text_color=trade_color, text_size=tbl_size, text_halign=text.align_right)
+
+    // Bullish Stats
+    table.cell(status_tbl, 0, 3, "─── BULLISH ───", text_color=color.green, text_size=tbl_size, bgcolor=color.new(color.green, 90), text_halign=text.align_center)
+    table.merge_cells(status_tbl, 0, 3, 1, 3)
+
+    table.cell(status_tbl, 0, 4, "Signals (Visible)", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    table.cell(status_tbl, 1, 4, str.tostring(array.size(bull_labels)), text_color=color.green, text_size=tbl_size, text_halign=text.align_right)
+
+    table.cell(status_tbl, 0, 5, "Streak", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    streak_display = bull_streak == 0 ? "—" : bull_arrow + str.tostring(bull_streak)
+    table.cell(status_tbl, 1, 5, streak_display, text_color=bull_streak > 0 ? color.lime : color.gray, text_size=tbl_size, text_halign=text.align_right)
+
+    table.cell(status_tbl, 0, 6, "Unmitigated SL", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    bull_sl_text = str.tostring(bull_unmitigated_count) + (nearest_bull_sl > 0 ? " @ " + str.tostring(nearest_bull_sl, format.mintick) : "")
+    table.cell(status_tbl, 1, 6, bull_sl_text, text_color=bull_unmitigated_count > 0 ? color.green : color.gray, text_size=tbl_size, text_halign=text.align_right)
+
+    // Bearish Stats
+    table.cell(status_tbl, 0, 7, "─── BEARISH ───", text_color=color.red, text_size=tbl_size, bgcolor=color.new(color.red, 90), text_halign=text.align_center)
+    table.merge_cells(status_tbl, 0, 7, 1, 7)
+
+    table.cell(status_tbl, 0, 8, "Signals (Visible)", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    table.cell(status_tbl, 1, 8, str.tostring(array.size(bear_labels)), text_color=color.red, text_size=tbl_size, text_halign=text.align_right)
+
+    table.cell(status_tbl, 0, 9, "Streak", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    bear_streak_display = bear_streak == 0 ? "—" : bear_arrow + str.tostring(bear_streak)
+    table.cell(status_tbl, 1, 9, bear_streak_display, text_color=bear_streak > 0 ? #ff6b6b : color.gray, text_size=tbl_size, text_halign=text.align_right)
+
+    table.cell(status_tbl, 0, 10, "Unmitigated SL", text_color=color.gray, text_size=tbl_size, text_halign=text.align_left)
+    bear_sl_text = str.tostring(bear_unmitigated_count) + (nearest_bear_sl > 0 ? " @ " + str.tostring(nearest_bear_sl, format.mintick) : "")
+    table.cell(status_tbl, 1, 10, bear_sl_text, text_color=bear_unmitigated_count > 0 ? color.red : color.gray, text_size=tbl_size, text_halign=text.align_right)
+
+// ════════════════════════════════════════════════════════════════════════════
+// ALERTS
+// ════════════════════════════════════════════════════════════════════════════
+
+// 1H Bullish ladder alerts
+alertcondition(new_bull_signal, "1H Bullish Ladder Active", "🟢 1H BULLISH LADDER - Do NOT short!")
+alertcondition(bull_active[1] and not bull_active, "1H Bullish Ladder Broken", "1H Bullish ladder broken")
+
+// 1H Bearish ladder alerts
+alertcondition(new_bear_signal, "1H Bearish Ladder Active", "🔴 1H BEARISH LADDER - Do NOT long!")
+alertcondition(bear_active[1] and not bear_active, "1H Bearish Ladder Broken", "1H Bearish ladder broken")
+
+// Streak alerts
+alertcondition(new_bull_signal and bull_streak >= 1, "1H Bullish Streak Signal", "🟢⬆ 1H Bullish streak continues!")
+alertcondition(new_bear_signal and bear_streak >= 1, "1H Bearish Streak Signal", "🔴⬇ 1H Bearish streak continues!")
+
+// MTF alignment alerts
+bull_alignment = bias_1m == "BULL" and bias_3m == "BULL" and bias_5m == "BULL"
+bear_alignment = bias_1m == "BEAR" and bias_3m == "BEAR" and bias_5m == "BEAR"
+alertcondition(bull_alignment and not bull_alignment[1], "MTF Bull Alignment (1m+3m+5m)", "🟢🟢🟢 All lower TFs aligned BULLISH!")
+alertcondition(bear_alignment and not bear_alignment[1], "MTF Bear Alignment (1m+3m+5m)", "🔴🔴🔴 All lower TFs aligned BEARISH!")
