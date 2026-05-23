@@ -6,63 +6,88 @@
 <title>Guided Analysis · hPSC → Intermediate Mesoderm (Lam et al., JASN 2014)</title>
 <style>
   :root{
-    --bg:#0f1720; --panel:#16212e; --panel2:#1c2a3a; --ink:#e7eef5; --muted:#9fb3c8;
-    --line:#27374a; --accent:#34d3c0; --accent2:#7c9cff; --warn:#ffb454; --bad:#ff6b81;
-    --good:#52e0a4; --chip:#223144; --shadow:0 8px 30px rgba(0,0,0,.35);
-    --pluri:#9a7cff; --strk:#ff8fb1; --de:#ffc56b; --offm:#c0c8d4; --im:#34d3c0;
-    --tub:#5cc8ff; --cm:#76e3a0; --mat:#b0e57c;
+    --bg:#f5f8fc; --panel:#ffffff; --panel2:#eef3f9; --ink:#16222f; --muted:#5a6b7d;
+    --line:#dce5ef; --accent:#0d9488; --accent2:#3b5bdb; --warn:#bf7710; --bad:#d63b53;
+    --good:#12895a; --chip:#eef3f9; --shadow:0 6px 22px rgba(22,45,75,.08);
+    --pluri:#8b5cf6; --strk:#e0479b; --de:#dd8a0b; --offm:#7c8aa0; --im:#0d9488;
+    --tub:#0ea5e9; --cm:#16a34a; --mat:#5f9e0d;
+    --nPSC:#ef4444; --nME:#f59e0b; --nIM:#10b981; --nMM:#3b82f6; --nTUB:#0ea5e9;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;background:linear-gradient(180deg,#0c131b,#0f1720 240px);color:var(--ink);
+  body{margin:0;background:linear-gradient(180deg,#e9f0f8,#f5f8fc 260px);color:var(--ink);
     font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
   a{color:var(--accent2);text-decoration:none}
   a:hover{text-decoration:underline}
   .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
-  code{background:#0c1219;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.86em;color:#cfe7ff}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.86em;color:#0a6b62}
 
   /* Header */
   header.hero{position:relative;padding:46px 0 30px;border-bottom:1px solid var(--line);
-    background:radial-gradient(1100px 360px at 18% -10%,rgba(52,211,192,.16),transparent 60%),
-               radial-gradient(900px 360px at 92% 0%,rgba(124,156,255,.14),transparent 55%);}
+    background:radial-gradient(1100px 360px at 18% -10%,rgba(13,148,136,.12),transparent 60%),
+               radial-gradient(900px 360px at 92% 0%,rgba(59,91,219,.10),transparent 55%);}
   .kicker{letter-spacing:.16em;text-transform:uppercase;font-size:12px;color:var(--accent);font-weight:700}
-  h1.title{font-size:30px;line-height:1.22;margin:10px 0 6px;font-weight:800;max-width:62ch}
+  h1.title{font-size:30px;line-height:1.22;margin:10px 0 6px;font-weight:800;max-width:62ch;color:#0e1a26}
   .byline{color:var(--muted);font-size:14px;max-width:80ch}
   .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-  .meta .pill{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink)}
+  .meta .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink);box-shadow:var(--shadow)}
   .meta .pill b{color:var(--accent)}
 
   /* Nav */
-  nav.toc{position:sticky;top:0;z-index:50;background:rgba(12,18,26,.86);backdrop-filter:blur(8px);
+  nav.toc{position:sticky;top:0;z-index:50;background:rgba(245,248,252,.9);backdrop-filter:blur(8px);
     border-bottom:1px solid var(--line)}
   nav.toc .wrap{display:flex;gap:4px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
   nav.toc a{color:var(--muted);font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;white-space:nowrap}
-  nav.toc a:hover{color:var(--ink);background:var(--panel);text-decoration:none}
-  nav.toc a.active{color:#04201c;background:var(--accent)}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2);text-decoration:none}
+  nav.toc a.active{color:#fff;background:var(--accent)}
 
   section{padding:40px 0 8px;border-bottom:1px solid var(--line)}
   section:last-of-type{border-bottom:none}
-  h2{font-size:23px;margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:10px}
+  h2{font-size:23px;margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:10px;color:#0e1a26}
   h2 .num{font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:7px;
     padding:2px 8px;font-weight:700}
   .lead{color:var(--muted);max-width:90ch;margin:6px 0 22px}
-  h3{font-size:17px;margin:26px 0 10px;font-weight:700}
+  h3{font-size:17px;margin:26px 0 10px;font-weight:700;color:#16222f}
   .note{color:var(--muted);font-size:13.5px}
 
   .grid{display:grid;gap:14px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
   .card h4{margin:0 0 8px;font-size:15px}
 
+  /* Lineage map (faithful to Fig 5B) */
+  .lineage{display:flex;flex-direction:column;max-width:780px;margin:8px 0 6px}
+  .ln-stage{display:flex;align-items:center;gap:16px}
+  .ln-node{width:64px;height:64px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:800;font-size:15px;box-shadow:0 4px 14px rgba(22,45,75,.18)}
+  .ln-info{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 15px;box-shadow:var(--shadow)}
+  .ln-name{font-weight:800;font-size:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ln-day{font-size:11.5px;font-weight:700;color:#fff;background:var(--accent2);border-radius:999px;padding:2px 9px}
+  .ln-mk{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .ln-mk b{color:var(--ink);font-weight:700}
+  .ln-edge{display:flex;align-items:stretch;gap:16px;margin:3px 0}
+  .ln-rail{width:64px;flex:0 0 auto;display:flex;justify-content:center;position:relative}
+  .ln-rail i{width:4px;border-radius:3px;background:var(--rail,#cbd5e1);margin:2px 0}
+  .ln-rail .tip{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);color:var(--rail,#94a3b8);font-size:17px;line-height:1}
+  .ln-cyto{flex:1;background:var(--panel2);border:1px dashed #c4d2e2;border-radius:11px;padding:9px 14px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .ln-factor{font-weight:800;font-size:13px;color:var(--accent)}
+  .ln-dose{font-size:12px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 7px;white-space:nowrap}
+  .ln-dur{font-size:12px;color:var(--muted)}
+  .ln-dur b{color:var(--ink)}
+  .ln-win{font-size:11.5px;color:#fff;background:var(--accent);border-radius:999px;padding:2px 9px;margin-left:auto;white-space:nowrap}
+  .ln-branch{margin:3px 0 3px 80px;border-left:2px dashed #c4d2e2;padding-left:16px}
+  .ln-branch .ln-cyto{background:#fff}
+  .branchhead{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:2px 0 2px}
+
   /* Roadmap pipeline */
   .road{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:8px 0 6px}
-  .step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px}
-  .step .tag{font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;color:#06241f;
+  .step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px;box-shadow:var(--shadow)}
+  .step .tag{font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;color:#fff;
     display:inline-block;padding:3px 8px;border-radius:6px;margin-bottom:8px}
   .step .when{font-size:11.5px;color:var(--muted)}
   .step .what{font-weight:700;margin:4px 0 6px;font-size:14.5px}
   .step .mk{font-size:12px;color:var(--ink);background:var(--chip);border:1px solid var(--line);
     border-radius:6px;padding:2px 7px;display:inline-block;margin:2px 3px 0 0}
-  .step .arrow{position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--line);font-size:20px;z-index:2}
+  .step .arrow{position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:#b9c6d6;font-size:20px;z-index:2}
   .flowfactor{font-size:11.5px;color:var(--accent);margin-top:6px;font-style:italic}
 
   /* Tables */
@@ -71,18 +96,19 @@
   th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.6px}
   thead th{background:var(--panel2);position:sticky;top:0;color:var(--ink);font-size:12px;letter-spacing:.04em;
     text-transform:uppercase}
-  tbody tr:hover{background:#18283a}
+  tbody tr:hover{background:#f0f5fb}
+  tbody tr:last-child td{border-bottom:none}
   td .dose{color:var(--accent);font-weight:700;white-space:nowrap}
   .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
-  .b-win{color:var(--good);border-color:var(--good);background:rgba(82,224,164,.1)}
-  .b-no{color:var(--bad);border-color:var(--bad);background:rgba(255,107,129,.08)}
-  .b-mid{color:var(--warn);border-color:var(--warn);background:rgba(255,180,84,.08)}
-  .b-ctrl{color:var(--muted);border-color:var(--line)}
+  .b-win{color:var(--good);border-color:#a6ddc3;background:#e8f7f0}
+  .b-no{color:var(--bad);border-color:#f3c0c9;background:#fdedf0}
+  .b-mid{color:var(--warn);border-color:#f0d59a;background:#fcf3e1}
+  .b-ctrl{color:var(--muted);border-color:var(--line);background:#f3f6fa}
 
   /* Combo screens */
   .screen{margin:14px 0}
   .screen summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;
-    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:700}
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:700;box-shadow:var(--shadow)}
   .screen summary::-webkit-details-marker{display:none}
   .screen summary .chev{margin-left:auto;color:var(--muted);transition:transform .2s}
   .screen[open] summary .chev{transform:rotate(90deg)}
@@ -92,10 +118,10 @@
 
   /* Marker catalog */
   .filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
-  .filters button{background:var(--chip);color:var(--muted);border:1px solid var(--line);border-radius:999px;
+  .filters button{background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:999px;
     padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
-  .filters button:hover{color:var(--ink)}
-  .filters button.on{color:#04201c;background:var(--accent);border-color:var(--accent)}
+  .filters button:hover{color:var(--ink);border-color:#c4d2e2}
+  .filters button.on{color:#fff;background:var(--accent);border-color:var(--accent)}
   .stagegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
   .stageblock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
   .stageblock .head{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
@@ -123,12 +149,12 @@
   ul.clean{margin:6px 0;padding-left:20px}
   ul.clean li{margin:5px 0}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  @media(max-width:760px){.two{grid-template-columns:1fr}.ln-branch{margin-left:20px}}
 
   footer{padding:30px 0 60px;color:var(--muted);font-size:12.5px}
   .disclaim{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;margin-top:14px}
   .src{font-size:11.5px;color:var(--muted)}
-  mark{background:rgba(52,211,192,.22);color:#d7fff8;padding:0 3px;border-radius:3px}
+  mark{background:rgba(13,148,136,.16);color:#0a5c54;padding:0 3px;border-radius:3px}
 </style>
 </head>
 <body>
@@ -151,7 +177,8 @@
 <nav class="toc">
   <div class="wrap">
     <a href="#overview">Overview</a>
-    <a href="#roadmap">Roadmap</a>
+    <a href="#lineage">Lineage map</a>
+    <a href="#roadmap">Pipeline &amp; branches</a>
     <a href="#treatments">Treatments</a>
     <a href="#combos">Combos &amp; Screens</a>
     <a href="#timing">Timing &amp; Duration</a>
@@ -166,7 +193,7 @@
 <!-- OVERVIEW -->
 <section id="overview">
   <h2><span class="num">01</span> What this paper does</h2>
-  <p class="lead">The authors build a stepwise, small-molecule + growth-factor recipe that pushes human pluripotent stem cells (hPSCs) down the kidney lineage — through <b>mesendoderm → intermediate mesoderm (IM) → either proximal-tubule-like tubules or cap-mesenchyme nephron progenitors</b> — entirely in defined monolayer culture, with no cell sorting. This report extracts everything you asked for: the full <a href="#treatments">treatment catalog</a>, every <a href="#combos">combination they screened</a>, the <a href="#timing">timing &amp; duration</a> of each step, and a <a href="#markers">stage-by-stage marker catalog</a>.</p>
+  <p class="lead">The authors build a stepwise, small-molecule + growth-factor recipe that pushes human pluripotent stem cells (hPSCs) down the kidney lineage — through <b>mesendoderm → intermediate mesoderm (IM) → either proximal-tubule-like tubules or cap-mesenchyme nephron progenitors</b> — entirely in defined monolayer culture, with no cell sorting. This report extracts everything you asked for: the author's <a href="#lineage">lineage map</a>, the full <a href="#treatments">treatment catalog</a>, every <a href="#combos">combination they screened</a>, the <a href="#timing">timing &amp; duration</a> of each step, and a <a href="#markers">stage-by-stage marker catalog</a>.</p>
 
   <div class="two">
     <div class="card">
@@ -182,13 +209,143 @@
       </ul>
     </div>
   </div>
-  <div class="callout">How to read this report: the <b>Roadmap</b> is the map; <b>Treatments</b> and <b>Combos</b> are the "what &amp; with what"; <b>Timing</b> is the "when &amp; how long"; the <b>Marker Catalog</b> is the filterable reference of what defines each stage. Figure numbers (Fig 1–5) refer to the original paper.</div>
+  <div class="callout">How to read this report: the <b>Lineage map</b> is the author's own schematic (Fig 5B) with timing/dose annotations; the <b>Pipeline</b> adds the branches; <b>Treatments</b> and <b>Combos</b> are the "what &amp; with what"; <b>Timing</b> is the "when &amp; how long"; the <b>Marker Catalog</b> is the filterable reference of what defines each stage. Figure numbers (Fig 1–5) refer to the original paper.</div>
+</section>
+
+<!-- LINEAGE MAP -->
+<section id="lineage">
+  <h2><span class="num">02</span> The author's lineage map</h2>
+  <p class="lead">This recreates the stepwise lineage diagram the authors drew for their summarized kidney protocol (<b>Fig 5B</b>, with the mesendoderm/IM nodes from Fig 1A &amp; 2H). Each colored node is a defined cell state; each connector carries the exact <b>cytokine combination, dose, duration, and day-window</b> that drives the next step. Node abbreviations: <b>PSC</b> pluripotent stem cell · <b>ME</b> mesendoderm · <b>IM</b> intermediate mesoderm · <b>MM</b> metanephric cap mesenchyme.</p>
+
+  <div class="lineage">
+    <!-- PSC -->
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--nPSC)">PSC</div>
+      <div class="ln-info">
+        <div class="ln-name">Pluripotent stem cell <span class="ln-day">Day 0</span></div>
+        <div class="ln-mk"><b>OCT4 · NANOG · SOX2 · E-cadherin</b></div>
+      </div>
+    </div>
+    <!-- edge 1 -->
+    <div class="ln-edge">
+      <div class="ln-rail" style="--rail:var(--nME)"><i></i><span class="tip">▼</span></div>
+      <div class="ln-cyto">
+        <span class="ln-factor">+ CHIR99021</span>
+        <span class="ln-dose">5 µM</span>
+        <span class="ln-dur"><b>36 h</b> (tested 24 / 36 / 48 h)</span>
+        <span class="ln-win">Day 0 → ~1.5</span>
+      </div>
+    </div>
+    <!-- ME -->
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--nME)">ME</div>
+      <div class="ln-info">
+        <div class="ln-name">Mesendoderm <span class="ln-day">~24–48 h</span></div>
+        <div class="ln-mk"><b>BRACHYURY · MIXL1 · EOMES · N-cadherin</b> &nbsp;<span class="note">(~99% BRACHY⁺; EMT, peaks 48 h)</span></div>
+      </div>
+    </div>
+    <!-- edge 2 -->
+    <div class="ln-edge">
+      <div class="ln-rail" style="--rail:var(--nIM)"><i></i><span class="tip">▼</span></div>
+      <div class="ln-cyto">
+        <span class="ln-factor">+ FGF2 + Retinoic acid</span>
+        <span class="ln-dose">FGF2 100 ng/ml</span>
+        <span class="ln-dose">RA 1 µM</span>
+        <span class="ln-dur"><b>36–42 h</b> (≈ 2–3 days)</span>
+        <span class="ln-win">→ Day 3</span>
+      </div>
+    </div>
+    <!-- IM -->
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--nIM)">IM</div>
+      <div class="ln-info">
+        <div class="ln-name">Intermediate mesoderm <span class="ln-day">Day 3</span></div>
+        <div class="ln-mk"><b>PAX2 · LHX1</b> &nbsp;<span class="note">(+ OSR1, PAX8; 80–85% PAX2⁺LHX1⁺ by flow; transient)</span></div>
+      </div>
+    </div>
+    <!-- edge 3 -->
+    <div class="ln-edge">
+      <div class="ln-rail" style="--rail:var(--nMM)"><i></i><span class="tip">▼</span></div>
+      <div class="ln-cyto">
+        <span class="ln-factor">+ FGF9 + Activin A</span>
+        <span class="ln-dose">FGF9 100 ng/ml</span>
+        <span class="ln-dose">Activin 10 ng/ml</span>
+        <span class="ln-dur"><b>3 days</b> · + low plating density</span>
+        <span class="ln-win">Day 3 → 6</span>
+      </div>
+    </div>
+    <!-- MM -->
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--nMM)">MM</div>
+      <div class="ln-info">
+        <div class="ln-name">Metanephric cap mesenchyme <span class="ln-day">Day 6</span></div>
+        <div class="ln-mk"><b>SIX2 · SALL1 · WT1</b> &nbsp;<span class="note">(nephron progenitors — first from hPSCs)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Branches off the main spine</h3>
+  <div class="ln-branch">
+    <div class="branchhead">Branch A · spontaneous tubules (off IM, Day 3)</div>
+    <div class="ln-edge">
+      <div class="ln-rail" style="--rail:var(--nTUB)"><i></i><span class="tip">▼</span></div>
+      <div class="ln-cyto">
+        <span class="ln-factor">− Withdraw FGF2 + RA</span>
+        <span class="ln-dose">serum-free, no factors</span>
+        <span class="ln-dur"><b>~6 days</b></span>
+        <span class="ln-win">Day 3 → 9</span>
+      </div>
+    </div>
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--nTUB);width:52px;height:52px;font-size:12px">TUB</div>
+      <div class="ln-info">
+        <div class="ln-name">Proximal-tubule-like tubules <span class="ln-day">Day 7–9</span></div>
+        <div class="ln-mk"><b>LTL · N-cadherin · KSP · polycystin-2⁺ cilia · laminin</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ln-branch" style="margin-top:10px">
+    <div class="branchhead">Branch B · Wnt-induced tubulogenesis (off MM, Day 6)</div>
+    <div class="ln-edge">
+      <div class="ln-rail" style="--rail:var(--mat)"><i></i><span class="tip">▼</span></div>
+      <div class="ln-cyto">
+        <span class="ln-factor">+ CHIR99021 (Wnt pulse)</span>
+        <span class="ln-dose">5 µM</span>
+        <span class="ln-dur"><b>24 h</b></span>
+        <span class="ln-win">Day 6 → 7/8</span>
+      </div>
+    </div>
+    <div class="ln-stage">
+      <div class="ln-node" style="background:var(--mat);width:52px;height:52px;font-size:11px">epith.</div>
+      <div class="ln-info">
+        <div class="ln-name">Epithelializing tubule structures <span class="ln-day">Day 7–8</span></div>
+        <div class="ln-mk"><b>SIX2 ↓ · LTL ↑</b> &nbsp;<span class="note">(condensation/epithelialization, as nephrogenic IM in vivo)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Stage-transition guide — cytokine combo · dose · duration · window</h3>
+  <p class="note">The same data as the map, in precise tabular form for protocol design.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Step</th><th>From → To</th><th>Cytokine combo (dose)</th><th>Duration</th><th>Day window</th><th>Markers gained</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>PSC → ME</td><td>CHIR99021 <span class="dose">5 µM</span></td><td>36 h <span class="note">(24–48 h tested; 36 h optimal)</span></td><td>Day 0 → ~1.5</td><td>BRACHYURY, MIXL1, EOMES, N-cad</td></tr>
+        <tr><td>2</td><td>ME → IM</td><td>FGF2 <span class="dose">100 ng/ml</span> + RA <span class="dose">1 µM</span></td><td>36–42 h (≈2–3 d)</td><td>→ Day 3</td><td>PAX2, LHX1 (+OSR1, PAX8)</td></tr>
+        <tr><td>3</td><td>IM → MM</td><td>FGF9 <span class="dose">100 ng/ml</span> + Activin A <span class="dose">10 ng/ml</span> <span class="note">(+ low density)</span></td><td>3 days</td><td>Day 3 → 6</td><td>SIX2, SALL1, WT1</td></tr>
+        <tr><td>A</td><td>IM → Tubules</td><td><i>withdraw</i> FGF2+RA; serum-free, no factors</td><td>~6 days</td><td>Day 3 → 9</td><td>LTL, N-cad, KSP, polycystin-2</td></tr>
+        <tr><td>B</td><td>MM → Tubulogenesis</td><td>CHIR99021 <span class="dose">5 µM</span> (Wnt pulse)</td><td>24 h</td><td>Day 6 → 7/8</td><td>SIX2↓, LTL↑</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">Full optimized CM protocol (Concise Methods), end to end: <code>A-RPMI + CHIR 5 µM ×36 h</code> → <code>+ FGF2 100 + RA 1 µM ×36–42 h</code> → <code>+ FGF9 100 + Activin A 10 ng/ml ×3 d</code>. The IM (tubule) protocol stops after FGF2+RA and withdraws factors at day 3.</div>
 </section>
 
 <!-- ROADMAP -->
 <section id="roadmap">
-  <h2><span class="num">02</span> The differentiation roadmap</h2>
-  <p class="lead">Each box is a defined cell state; the italic text under the arrow is the factor(s) that drive the next transition. The pipeline forks after IM (day 3) into a spontaneous tubule path and a directed nephron-progenitor path.</p>
+  <h2><span class="num">03</span> Pipeline &amp; branches</h2>
+  <p class="lead">The same lineage shown as a left-to-right pipeline so the two forks after IM (day 3) are explicit: a spontaneous tubule path and a directed nephron-progenitor path. Italic text under each box is the driving factor.</p>
 
   <div class="road">
     <div class="step" style="border-top:3px solid var(--pluri)">
@@ -255,7 +412,7 @@
 
 <!-- TREATMENTS -->
 <section id="treatments">
-  <h2><span class="num">03</span> Treatments tested — full catalog</h2>
+  <h2><span class="num">04</span> Treatments tested — full catalog</h2>
   <p class="lead">Every signaling agent used in the study, its molecular target, the doses tested, and its role. The top block is the core kidney/IM toolkit; the second block lists agents used to prove fate-plasticity by making non-kidney lineages (endoderm derivatives).</p>
 
   <h3>Core kidney / IM toolkit</h3>
@@ -302,7 +459,7 @@
 
 <!-- COMBOS -->
 <section id="combos">
-  <h2><span class="num">04</span> Combinations &amp; screens (with outcomes)</h2>
+  <h2><span class="num">05</span> Combinations &amp; screens (with outcomes)</h2>
   <p class="lead">The study is essentially a sequence of factor screens, each narrowing toward the winning combination. Click any screen to expand its arms and results. <span class="badge b-win">green</span> = selected/winner, <span class="badge b-mid">amber</span> = partial, <span class="badge b-no">red</span> = failed/dropped.</p>
 
   <details class="screen" open>
@@ -412,7 +569,7 @@
 
 <!-- TIMING -->
 <section id="timing">
-  <h2><span class="num">05</span> Timing &amp; duration</h2>
+  <h2><span class="num">06</span> Timing &amp; duration</h2>
   <p class="lead">The exact day-by-day choreography of the optimized protocols, taken from the Concise Methods plus the figure time-courses. Timing is everything here: identical factors give different fates depending on <i>when</i> and <i>for how long</i> they're applied.</p>
 
   <h3>Master timeline — the kidney/IM protocols</h3>
@@ -464,7 +621,7 @@
 
 <!-- MARKERS -->
 <section id="markers">
-  <h2><span class="num">06</span> Marker catalog by stage</h2>
+  <h2><span class="num">07</span> Marker catalog by stage</h2>
   <p class="lead">The complete set of markers used to <i>define</i> each developmental stage, with what the marker indicates and how it was detected. Use the filter to focus on one stage. <b>Detection key:</b> IF = immunofluorescence, qPCR = quantitative RT-PCR, Flow = flow cytometry.</p>
 
   <div class="legend">
@@ -497,6 +654,7 @@
       <div class="body">
         <div class="mrow"><span class="gene">OCT4</span><div><div class="desc">Core pluripotency TF. Re-appears if CHIR is withdrawn at 24 h (reversion).</div><div class="det">IF · qPCR</div></div></div>
         <div class="mrow"><span class="gene">NANOG</span><div><div class="desc">Core pluripotency TF; falls as mesendoderm genes rise.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SOX2</span><div><div class="desc">Pluripotency factor (also a reprogramming factor used to derive the iPSCs).</div><div class="det">qPCR</div></div></div>
         <div class="mrow"><span class="gene">E-cadherin</span><div><div class="desc">Epithelial cadherin of the pre-EMT state; lost during streak formation.</div><div class="det">IF</div></div></div>
       </div>
     </div>
@@ -586,7 +744,7 @@
 
 <!-- LINES -->
 <section id="lines">
-  <h2><span class="num">07</span> Cell lines &amp; controls</h2>
+  <h2><span class="num">08</span> Cell lines &amp; controls</h2>
   <div class="two">
     <div class="card">
       <h4>Pluripotent lines (reproducibility set)</h4>
@@ -611,7 +769,7 @@
 
 <!-- FINDINGS -->
 <section id="findings">
-  <h2><span class="num">08</span> Key findings &amp; context</h2>
+  <h2><span class="num">09</span> Key findings &amp; context</h2>
   <div class="grid">
     <div class="card"><h4>1 · FGF is the missing IM signal</h4><p class="note">FGF2 is identified for the first time as a potent inducer of IM-specific PAX2 in CHIR-primed hPSCs — adding FGF signaling to the previously known Wnt/activin/BMP/RA toolkit.</p></div>
     <div class="card"><h4>2 · Fast &amp; sort-free</h4><p class="note">PAX2⁺LHX1⁺ IM in just 3 days at 70–80% efficiency, reproducible across 5 hPSC lines without FACS — faster than the 11–18 day OSR1-GFP approach of Mae et al.</p></div>
@@ -628,9 +786,9 @@
 
 <footer class="wrap">
   <div class="disclaim">
-    <b>Source &amp; scope.</b> This is an analysis aid generated from the full text of: Lam AQ, Freedman BS, Morizane R, Lerou PH, Valerius MT, Bonventre JV. "Rapid and Efficient Differentiation of Human Pluripotent Stem Cells into Intermediate Mesoderm That Forms Tubules Expressing Kidney Proximal Tubular Markers." <i>J Am Soc Nephrol</i> 25:1211–1225, 2014 (doi:10.1681/ASN.2013080831). Doses, durations, percentages, and marker assignments are transcribed from the paper's Results, figure legends (Fig 1–5), and Concise Methods. Supplemental Tables 1–2 (antibody &amp; primer lists) are referenced in the paper as online-only and were not part of the provided file. Verify against the primary source before using for protocol design.
+    <b>Source &amp; scope.</b> This is an analysis aid generated from the full text of: Lam AQ, Freedman BS, Morizane R, Lerou PH, Valerius MT, Bonventre JV. "Rapid and Efficient Differentiation of Human Pluripotent Stem Cells into Intermediate Mesoderm That Forms Tubules Expressing Kidney Proximal Tubular Markers." <i>J Am Soc Nephrol</i> 25:1211–1225, 2014 (doi:10.1681/ASN.2013080831). The lineage map recreates the schematic in Fig 5B (with mesendoderm/IM nodes from Fig 1A &amp; 2H). Doses, durations, percentages, and marker assignments are transcribed from the paper's Results, figure legends (Fig 1–5), and Concise Methods. Supplemental Tables 1–2 (antibody &amp; primer lists) are referenced as online-only and were not part of the provided file. Verify against the primary source before using for protocol design.
   </div>
-  <p style="margin-top:14px">Generated for guided review · stages color-coded throughout · interactive filter on the Marker Catalog.</p>
+  <p style="margin-top:14px">Generated for guided review · light theme · stages color-coded throughout · interactive filter on the Marker Catalog.</p>
 </footer>
 
 <script>
