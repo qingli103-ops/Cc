@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guided Analysis · hPSC → Intermediate Mesoderm (Lam et al., JASN 2014)</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#16212e; --panel2:#1c2a3a; --ink:#e7eef5; --muted:#9fb3c8;
+    --line:#27374a; --accent:#34d3c0; --accent2:#7c9cff; --warn:#ffb454; --bad:#ff6b81;
+    --good:#52e0a4; --chip:#223144; --shadow:0 8px 30px rgba(0,0,0,.35);
+    --pluri:#9a7cff; --strk:#ff8fb1; --de:#ffc56b; --offm:#c0c8d4; --im:#34d3c0;
+    --tub:#5cc8ff; --cm:#76e3a0; --mat:#b0e57c;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:linear-gradient(180deg,#0c131b,#0f1720 240px);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  code{background:#0c1219;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.86em;color:#cfe7ff}
+
+  /* Header */
+  header.hero{position:relative;padding:46px 0 30px;border-bottom:1px solid var(--line);
+    background:radial-gradient(1100px 360px at 18% -10%,rgba(52,211,192,.16),transparent 60%),
+               radial-gradient(900px 360px at 92% 0%,rgba(124,156,255,.14),transparent 55%);}
+  .kicker{letter-spacing:.16em;text-transform:uppercase;font-size:12px;color:var(--accent);font-weight:700}
+  h1.title{font-size:30px;line-height:1.22;margin:10px 0 6px;font-weight:800;max-width:62ch}
+  .byline{color:var(--muted);font-size:14px;max-width:80ch}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .meta .pill{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink)}
+  .meta .pill b{color:var(--accent)}
+
+  /* Nav */
+  nav.toc{position:sticky;top:0;z-index:50;background:rgba(12,18,26,.86);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:4px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+  nav.toc a{color:var(--muted);font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;white-space:nowrap}
+  nav.toc a:hover{color:var(--ink);background:var(--panel);text-decoration:none}
+  nav.toc a.active{color:#04201c;background:var(--accent)}
+
+  section{padding:40px 0 8px;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:23px;margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:10px}
+  h2 .num{font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:7px;
+    padding:2px 8px;font-weight:700}
+  .lead{color:var(--muted);max-width:90ch;margin:6px 0 22px}
+  h3{font-size:17px;margin:26px 0 10px;font-weight:700}
+  .note{color:var(--muted);font-size:13.5px}
+
+  .grid{display:grid;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 8px;font-size:15px}
+
+  /* Roadmap pipeline */
+  .road{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:8px 0 6px}
+  .step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px}
+  .step .tag{font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;color:#06241f;
+    display:inline-block;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+  .step .when{font-size:11.5px;color:var(--muted)}
+  .step .what{font-weight:700;margin:4px 0 6px;font-size:14.5px}
+  .step .mk{font-size:12px;color:var(--ink);background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 7px;display:inline-block;margin:2px 3px 0 0}
+  .step .arrow{position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--line);font-size:20px;z-index:2}
+  .flowfactor{font-size:11.5px;color:var(--accent);margin-top:6px;font-style:italic}
+
+  /* Tables */
+  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:640px;background:var(--panel)}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.6px}
+  thead th{background:var(--panel2);position:sticky;top:0;color:var(--ink);font-size:12px;letter-spacing:.04em;
+    text-transform:uppercase}
+  tbody tr:hover{background:#18283a}
+  td .dose{color:var(--accent);font-weight:700;white-space:nowrap}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
+  .b-win{color:var(--good);border-color:var(--good);background:rgba(82,224,164,.1)}
+  .b-no{color:var(--bad);border-color:var(--bad);background:rgba(255,107,129,.08)}
+  .b-mid{color:var(--warn);border-color:var(--warn);background:rgba(255,180,84,.08)}
+  .b-ctrl{color:var(--muted);border-color:var(--line)}
+
+  /* Combo screens */
+  .screen{margin:14px 0}
+  .screen summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:700}
+  .screen summary::-webkit-details-marker{display:none}
+  .screen summary .chev{margin-left:auto;color:var(--muted);transition:transform .2s}
+  .screen[open] summary .chev{transform:rotate(90deg)}
+  .screen summary .q{font-size:12px;color:var(--muted);font-weight:600}
+  .screen .body{padding:6px 4px 4px}
+  .readout{font-size:12.5px;color:var(--accent2)}
+
+  /* Marker catalog */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
+  .filters button{background:var(--chip);color:var(--muted);border:1px solid var(--line);border-radius:999px;
+    padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .filters button:hover{color:var(--ink)}
+  .filters button.on{color:#04201c;background:var(--accent);border-color:var(--accent)}
+  .stagegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+  .stageblock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+  .stageblock .head{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .stageblock .head .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+  .stageblock .head .nm{font-weight:800;font-size:14.5px}
+  .stageblock .head .sub{font-size:11.5px;color:var(--muted)}
+  .stageblock .body{padding:10px 14px 14px}
+  .mrow{display:flex;gap:9px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .mrow:last-child{border-bottom:none}
+  .mrow .gene{font-weight:700;font-size:13.5px;min-width:96px}
+  .mrow .desc{font-size:12.5px;color:var(--muted)}
+  .mrow .det{font-size:10.5px;color:var(--accent);font-weight:700;white-space:nowrap;margin-top:1px}
+  .stageblock.dim{display:none}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 12px 12px 0;
+    padding:13px 16px;margin:14px 0;color:var(--ink)}
+  .callout.warn{border-left-color:var(--warn)}
+  .callout b{color:var(--accent)}
+  .callout.warn b{color:var(--warn)}
+
+  ul.clean{margin:6px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+
+  footer{padding:30px 0 60px;color:var(--muted);font-size:12.5px}
+  .disclaim{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;margin-top:14px}
+  .src{font-size:11.5px;color:var(--muted)}
+  mark{background:rgba(52,211,192,.22);color:#d7fff8;padding:0 3px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Guided Paper Analysis · Stem-cell Nephrology</div>
+    <h1 class="title">Rapid, Efficient Differentiation of Human Pluripotent Stem Cells into Intermediate Mesoderm that Forms Kidney Proximal-Tubule-Marker⁺ Tubules</h1>
+    <div class="byline">Lam AQ, Freedman BS, Morizane R, Lerou PH, Valerius MT, Bonventre JV. &nbsp;<i>J Am Soc Nephrol</i> 25:1211–1225, 2014. Brigham &amp; Women's Hospital / Harvard Medical School · Harvard Stem Cell Institute · Keio University.</div>
+    <div class="meta">
+      <span class="pill">DOI <b>10.1681/ASN.2013080831</b></span>
+      <span class="pill">Model <b>hESC + hiPSC</b></span>
+      <span class="pill">Format <b>Chemically-defined monolayer</b></span>
+      <span class="pill">Headline <b>PAX2⁺LHX1⁺ IM in 3 days, 70–80%</b></span>
+      <span class="pill">First-ever <b>SIX2⁺ cells from hPSCs</b></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#treatments">Treatments</a>
+    <a href="#combos">Combos &amp; Screens</a>
+    <a href="#timing">Timing &amp; Duration</a>
+    <a href="#markers">Marker Catalog</a>
+    <a href="#lines">Cell Lines</a>
+    <a href="#findings">Key Findings</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2><span class="num">01</span> What this paper does</h2>
+  <p class="lead">The authors build a stepwise, small-molecule + growth-factor recipe that pushes human pluripotent stem cells (hPSCs) down the kidney lineage — through <b>mesendoderm → intermediate mesoderm (IM) → either proximal-tubule-like tubules or cap-mesenchyme nephron progenitors</b> — entirely in defined monolayer culture, with no cell sorting. This report extracts everything you asked for: the full <a href="#treatments">treatment catalog</a>, every <a href="#combos">combination they screened</a>, the <a href="#timing">timing &amp; duration</a> of each step, and a <a href="#markers">stage-by-stage marker catalog</a>.</p>
+
+  <div class="two">
+    <div class="card">
+      <h4>The one-sentence protocol</h4>
+      <p class="note">Treat hPSCs with the GSK-3β inhibitor <b>CHIR99021</b> to make mesendoderm (~100% BRACHYURY⁺), then add <b>FGF2 + retinoic acid</b> to make PAX2⁺LHX1⁺ IM by day 3. Withdraw factors → ciliated tubules expressing proximal-tubule markers. Or add <b>FGF9 + activin A</b> → SIX2⁺SALL1⁺WT1⁺ cap-mesenchyme nephron progenitors.</p>
+    </div>
+    <div class="card">
+      <h4>Why it mattered</h4>
+      <ul class="clean note">
+        <li><b>First</b> demonstration that FGF signaling (FGF2) potently induces IM-specific <b>PAX2</b> in hPSCs.</li>
+        <li><b>First</b> generation of <b>SIX2⁺</b> nephron-progenitor cells from hPSCs.</li>
+        <li>Fastest/most efficient IM protocol of its time — <b>3 days, 70–80%</b>, no FACS — vs. 11–18 days elsewhere.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">How to read this report: the <b>Roadmap</b> is the map; <b>Treatments</b> and <b>Combos</b> are the "what &amp; with what"; <b>Timing</b> is the "when &amp; how long"; the <b>Marker Catalog</b> is the filterable reference of what defines each stage. Figure numbers (Fig 1–5) refer to the original paper.</div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <h2><span class="num">02</span> The differentiation roadmap</h2>
+  <p class="lead">Each box is a defined cell state; the italic text under the arrow is the factor(s) that drive the next transition. The pipeline forks after IM (day 3) into a spontaneous tubule path and a directed nephron-progenitor path.</p>
+
+  <div class="road">
+    <div class="step" style="border-top:3px solid var(--pluri)">
+      <span class="tag" style="background:var(--pluri)">Day 0</span>
+      <div class="when">Start · 50% confluent</div>
+      <div class="what">Pluripotent hPSC</div>
+      <span class="mk">OCT4</span><span class="mk">NANOG</span><span class="mk">E-cad</span>
+      <div class="flowfactor">↓ CHIR 5 µM, 24–48 h</div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="step" style="border-top:3px solid var(--strk)">
+      <span class="tag" style="background:var(--strk)">~24–48 h</span>
+      <div class="when">Peak 36–48 h</div>
+      <div class="what">Primitive streak / Mesendoderm</div>
+      <span class="mk">BRACHYURY</span><span class="mk">MIXL1</span><span class="mk">N-cad</span>
+      <div class="flowfactor">↓ FGF2 100 + RA 1 µM</div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="step" style="border-top:3px solid var(--im)">
+      <span class="tag" style="background:var(--im)">Day 3</span>
+      <div class="when">Transient (lasts 2–3 d)</div>
+      <div class="what">Intermediate mesoderm</div>
+      <span class="mk">PAX2</span><span class="mk">LHX1</span><span class="mk">OSR1</span><span class="mk">PAX8</span>
+      <div class="flowfactor">forks ↓</div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="step" style="border-top:3px solid var(--tub)">
+      <span class="tag" style="background:var(--tub)">Day 7–9</span>
+      <div class="when">Withdraw all factors</div>
+      <div class="what">Proximal-tubule-like tubules</div>
+      <span class="mk">LTL</span><span class="mk">N-cad</span><span class="mk">KSP</span><span class="mk">PC2 cilia</span>
+      <div class="flowfactor">spontaneous, serum-free</div>
+    </div>
+  </div>
+
+  <h3>Directed fork → nephron progenitors</h3>
+  <div class="road">
+    <div class="step" style="border-top:3px solid var(--im)">
+      <span class="tag" style="background:var(--im)">Day 3</span>
+      <div class="when">PAX2⁺LHX1⁺ IM</div>
+      <div class="what">Intermediate mesoderm</div>
+      <div class="flowfactor">↓ FGF9 100 + activin A 10</div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="step" style="border-top:3px solid var(--cm)">
+      <span class="tag" style="background:var(--cm)">Day 6</span>
+      <div class="when">+ low plating density</div>
+      <div class="what">Cap mesenchyme (nephron progenitors)</div>
+      <span class="mk">SIX2</span><span class="mk">SALL1</span><span class="mk">WT1</span>
+      <div class="flowfactor">↓ CHIR 5 µM, 24 h (Wnt)</div>
+      <span class="arrow">›</span>
+    </div>
+    <div class="step" style="border-top:3px solid var(--mat)">
+      <span class="tag" style="background:var(--mat)">Day 7–8</span>
+      <div class="when">Wnt-induced</div>
+      <div class="what">Tubulogenesis</div>
+      <span class="mk">SIX2 ↓</span><span class="mk">LTL ↑</span>
+      <div class="flowfactor">epithelialization</div>
+    </div>
+  </div>
+
+  <div class="callout warn">Default fate without the right factors: CHIR <i>alone</i> sends cells toward <b>lateral plate mesoderm</b> (FOXF1⁺), not IM. The whole trick is the precisely-timed addition of FGF2 + RA to divert that default.</div>
+</section>
+
+<!-- TREATMENTS -->
+<section id="treatments">
+  <h2><span class="num">03</span> Treatments tested — full catalog</h2>
+  <p class="lead">Every signaling agent used in the study, its molecular target, the doses tested, and its role. The top block is the core kidney/IM toolkit; the second block lists agents used to prove fate-plasticity by making non-kidney lineages (endoderm derivatives).</p>
+
+  <h3>Core kidney / IM toolkit</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Agent</th><th>Class / target</th><th>Dose(s) tested</th><th>Role &amp; result</th></tr></thead>
+      <tbody>
+        <tr><td><b>CHIR99021</b> (CHIR)</td><td>GSK-3β inhibitor / canonical Wnt agonist</td><td><span class="dose">5 µM</span></td><td>Mesendoderm induction (~99% BRACHYURY⁺ at 24 h); re-used at day 6 to activate Wnt in SIX2⁺ cells → tubulogenesis. <span class="badge b-win">primary driver</span></td></tr>
+        <tr><td><b>FGF2</b> (bFGF)</td><td>Fibroblast growth factor</td><td><span class="dose">100 ng/ml</span> (IM); 10 ng/ml (pluripotency upkeep)</td><td>Potent inducer of IM marker PAX2 (50–60% PAX2⁺) — but only after CHIR pretreatment. <span class="badge b-win">key discovery</span></td></tr>
+        <tr><td><b>Retinoic acid</b> (RA)</td><td>Retinoid / RAR signaling</td><td><span class="dose">1 µM</span> (IM)</td><td>Added to FGF2 → strong LHX1; yields PAX2⁺LHX1⁺ IM. Modest PAX2 effect alone. <span class="badge b-win">synergizes</span></td></tr>
+        <tr><td><b>FGF9</b></td><td>Fibroblast growth factor</td><td><span class="dose">100 ng/ml</span></td><td>With activin A → induces SIX2 (cap-mesenchyme nephron progenitors). <span class="badge b-win">CM driver</span></td></tr>
+        <tr><td><b>Activin A</b></td><td>TGF-β / Nodal</td><td><span class="dose">10 ng/ml</span> (CM); 50 ng/ml (+Wnt3a); 100 ng/ml (endoderm)</td><td>Low dose + FGF9 → SIX2⁺ CM; high dose + CHIR → definitive endoderm. <span class="badge b-mid">dose-dependent</span></td></tr>
+        <tr><td><b>WNT3A</b></td><td>Wnt ligand</td><td><span class="dose">500 ng/ml</span> + titration</td><td>Induced BRACHYURY only 27% (alone) / 70% (+activin) — far weaker than CHIR. <span class="badge b-mid">superseded by CHIR</span></td></tr>
+        <tr><td><b>BMP-2</b></td><td>Bone morphogenetic protein</td><td>dose range (screen)</td><td>PAX2 screen: only a modest increase at low dose. <span class="badge b-mid">weak</span></td></tr>
+        <tr><td><b>BMP7</b></td><td>Bone morphogenetic protein</td><td>dose range; added to FGF2+RA</td><td>Modest PAX2 alone; when added to FGF2+RA it <i>decreased</i> PAX2. <span class="badge b-no">not synergistic</span></td></tr>
+        <tr><td><b>BMP-4</b></td><td>Bone morphogenetic protein</td><td>dose range (screen)</td><td>No PAX2 induction. (Endogenous BMP-4 is upregulated by CHIR.) <span class="badge b-no">no effect</span></td></tr>
+        <tr><td><b>DMSO</b></td><td>Vehicle</td><td>—</td><td>Negative/vehicle control throughout. <span class="badge b-ctrl">control</span></td></tr>
+        <tr><td><b>Y-27632</b></td><td>ROCK inhibitor</td><td><span class="dose">10 µM</span></td><td>Survival aid at single-cell plating &amp; in explant culture. <span class="badge b-ctrl">support</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Agents used to make non-kidney lineages (fate-plasticity proof)</h3>
+  <p class="note">Starting from the CHIR-induced definitive-endoderm state, the authors made pancreatic, hepatic, anterior-foregut and hindgut cells — evidence that CHIR-induced cells are genuinely multipotent.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Agent</th><th>Class / target</th><th>Dose</th><th>Lineage step</th></tr></thead>
+      <tbody>
+        <tr><td>FGF-7 (KGF)</td><td>FGF</td><td><span class="dose">50 ng/ml</span></td><td>Pancreatic (from DE)</td></tr>
+        <tr><td>KAAD-cyclopamine</td><td>SHH inhibitor</td><td><span class="dose">0.25 µM</span></td><td>Pancreatic</td></tr>
+        <tr><td>Noggin</td><td>BMP inhibitor</td><td><span class="dose">100 ng/ml</span> (panc); 200 ng/ml (foregut)</td><td>Pancreatic / anterior foregut</td></tr>
+        <tr><td>Indolactam V</td><td>PKC activator</td><td><span class="dose">300 nM</span></td><td>Pancreatic</td></tr>
+        <tr><td>ALK5 inhibitor II</td><td>TGF-βR1 inhibitor</td><td><span class="dose">1 µM</span></td><td>Pancreatic</td></tr>
+        <tr><td>SB431542</td><td>ALK4/5/7 inhibitor</td><td><span class="dose">10 µM</span></td><td>Anterior foregut endoderm</td></tr>
+        <tr><td>FGF4</td><td>FGF</td><td><span class="dose">500 ng/ml</span></td><td>Hindgut endoderm (+ CHIR 5 µM)</td></tr>
+        <tr><td>BMP-4</td><td>BMP</td><td><span class="dose">20 ng/ml</span></td><td>Hepatic (with FGF2)</td></tr>
+        <tr><td>HGF</td><td>Hepatocyte growth factor</td><td><span class="dose">10 ng/ml</span></td><td>Hepatic</td></tr>
+        <tr><td>Oncostatin M</td><td>IL-6 family cytokine</td><td><span class="dose">20 ng/ml</span></td><td>Hepatic maturation</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src">Base differentiation medium: Advanced RPMI + 1× L-GlutaMAX + 1× penicillin/streptomycin. Maintenance: mTeSR1 on Geltrex; cells plated at 4×10⁴ cells/cm² with Y-27632.</p>
+</section>
+
+<!-- COMBOS -->
+<section id="combos">
+  <h2><span class="num">04</span> Combinations &amp; screens (with outcomes)</h2>
+  <p class="lead">The study is essentially a sequence of factor screens, each narrowing toward the winning combination. Click any screen to expand its arms and results. <span class="badge b-win">green</span> = selected/winner, <span class="badge b-mid">amber</span> = partial, <span class="badge b-no">red</span> = failed/dropped.</p>
+
+  <details class="screen" open>
+    <summary>Screen 1 · Mesendoderm induction <span class="q">readout: % BRACHYURY⁺ at 24 h (Fig 1B–C)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Arm</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>DMSO (vehicle)</td><td>baseline (~0%)</td><td><span class="badge b-ctrl">control</span></td></tr>
+          <tr><td>WNT3A 500 ng/ml</td><td>26.7% ± 1.9% BRACHY⁺</td><td><span class="badge b-mid">weak</span></td></tr>
+          <tr><td>WNT3A 500 + Activin A 50 ng/ml</td><td>70.3% ± 5.5% BRACHY⁺</td><td><span class="badge b-mid">better</span></td></tr>
+          <tr><td><b>CHIR 5 µM</b></td><td><b>98.7% ± 1.3% BRACHY⁺</b></td><td><span class="badge b-win">selected</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ CHIR alone beats Wnt3a±activin. CHIR-induced cells co-express BRACHYURY+MIXL1, upregulate SNAI1, and switch E-cadherin → N-cadherin (EMT).</p>
+    </div>
+  </details>
+
+  <details class="screen">
+    <summary>Screen 2 · PAX2 induction <span class="q">CHIR 24 h → factor → assay day 4 (Fig 2I–J)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Factor added after CHIR</th><th>PAX2 result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Activin A (doses)</td><td>no PAX2</td><td><span class="badge b-no">no effect</span></td></tr>
+          <tr><td>BMP-4 (doses)</td><td>no PAX2</td><td><span class="badge b-no">no effect</span></td></tr>
+          <tr><td>BMP-2 (low dose)</td><td>modest ↑</td><td><span class="badge b-mid">weak</span></td></tr>
+          <tr><td>BMP7 (low dose)</td><td>modest ↑</td><td><span class="badge b-mid">weak</span></td></tr>
+          <tr><td>RA (low dose)</td><td>modest ↑</td><td><span class="badge b-mid">weak</span></td></tr>
+          <tr><td><b>FGF2 100 ng/ml</b></td><td><b>~50–60% PAX2⁺</b></td><td><span class="badge b-win">selected</span></td></tr>
+          <tr><td>FGF2 <i>without</i> CHIR pretreatment</td><td>no PAX2</td><td><span class="badge b-no">CHIR-dependent</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ FGF2 is the potent PAX2 inducer, but only on a CHIR-primed background. This is the paper's central mechanistic discovery.</p>
+    </div>
+  </details>
+
+  <details class="screen">
+    <summary>Screen 3 · Optimizing PAX2⁺LHX1⁺ IM <span class="q">"ChFR" = CHIR then FGF2+RA (Fig 3)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Combination</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>CHIR → FGF2 alone</td><td>PAX2⁺ but low LHX1</td><td><span class="badge b-mid">partial</span></td></tr>
+          <tr><td><b>CHIR → FGF2 100 + RA 1 µM</b></td><td><b>PAX2⁺LHX1⁺; 80–85% double⁺ (flow)</b></td><td><span class="badge b-win">selected</span></td></tr>
+          <tr><td>CHIR → FGF2 + RA + BMP7</td><td>↓ PAX2 (LHX1 ~unchanged)</td><td><span class="badge b-no">BMP7 detrimental</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout"><b>CHIR duration sub-screen (then FGF2+RA, PAX2 over days 2–7):</b></p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>CHIR duration</th><th>PAX2 at day 3</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>24 h</td><td>high (declines after d4)</td><td><span class="badge b-mid">good</span></td></tr>
+          <tr><td><b>36 h</b></td><td><b>&gt;70% PAX2⁺ (peak)</b></td><td><span class="badge b-win">optimal</span></td></tr>
+          <tr><td>48 h</td><td>lowest at all timepoints</td><td><span class="badge b-no">over-induced</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ Reproducible in 3 hESC + 2 hiPSC lines (70–80% in 4/5 lines). IM is transient: PAX2 collapses to &lt;10% by day 7.</p>
+    </div>
+  </details>
+
+  <details class="screen">
+    <summary>Screen 4 · Cap-mesenchyme (SIX2) induction <span class="q">from day-3 IM (Fig 5B–E)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Factor (added day 3)</th><th>SIX2 result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Vehicle</td><td>no SIX2⁺</td><td><span class="badge b-ctrl">control</span></td></tr>
+          <tr><td>FGF9 100 ng/ml alone</td><td>small SIX2⁺ population</td><td><span class="badge b-mid">partial</span></td></tr>
+          <tr><td>Activin A 10 ng/ml alone</td><td>small SIX2⁺ population</td><td><span class="badge b-mid">partial</span></td></tr>
+          <tr><td><b>FGF9 100 + Activin A 10 + low plating density</b></td><td><b>marked SIX2⁺ by day 6; ~all co-express SALL1, subset WT1</b></td><td><span class="badge b-win">selected</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ First report of SIX2⁺ cells from hPSCs. SIX2 protein needs sustained signaling (mRNA alone rose during spontaneous tubule formation but protein was not detectable).</p>
+    </div>
+  </details>
+
+  <details class="screen">
+    <summary>Screen 5 · Wnt competence of SIX2⁺ cells <span class="q">day-6 SIX2⁺ + CHIR (Fig 5F–I)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Arm (day 6)</th><th>Result by day 7–8</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>−CHIR (continue FGF9+activin)</td><td>SIX2⁺ maintained, no tubules</td><td><span class="badge b-ctrl">control</span></td></tr>
+          <tr><td><b>+CHIR 5 µM, 24 h</b></td><td><b>tubule-like structures; SIX2 ↓, LTL ↑</b></td><td><span class="badge b-win">Wnt-responsive</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ Mimics the in-vivo behavior of nephrogenic IM: Wnt drives condensation/epithelialization toward tubules.</p>
+    </div>
+  </details>
+
+  <details class="screen">
+    <summary>Side screen · Fate diversion to endoderm <span class="q">proves multipotency &amp; timing windows (Fig 2F, Suppl 1)</span><span class="chev">›</span></summary>
+    <div class="body">
+      <div class="tablewrap"><table>
+        <thead><tr><th>Combination</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><b>CHIR 24 h + high Activin A 100 ng/ml</b></td><td><b>&gt;95% SOX17⁺FOXA2⁺ definitive endoderm</b></td><td><span class="badge b-win">works</span></td></tr>
+          <tr><td>CHIR 48 h + Activin A</td><td>SOX17⁺ cells markedly decreased</td><td><span class="badge b-no">window closed</span></td></tr>
+          <tr><td>DE → pancreatic / hepatic / foregut / hindgut</td><td>insulin⁺, albumin⁺, etc.</td><td><span class="badge b-mid">demonstrated</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="readout">→ There's a strict temporal window: definitive endoderm is reachable only if activin is added at 24 h, not 48 h.</p>
+    </div>
+  </details>
+</section>
+
+<!-- TIMING -->
+<section id="timing">
+  <h2><span class="num">05</span> Timing &amp; duration</h2>
+  <p class="lead">The exact day-by-day choreography of the optimized protocols, taken from the Concise Methods plus the figure time-courses. Timing is everything here: identical factors give different fates depending on <i>when</i> and <i>for how long</i> they're applied.</p>
+
+  <h3>Master timeline — the kidney/IM protocols</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Phase</th><th>Window</th><th>Treatment</th><th>Duration</th><th>Endpoint</th></tr></thead>
+      <tbody>
+        <tr><td>Plating / prep</td><td>pre-day 0</td><td>4×10⁴ cells/cm² on Geltrex in mTeSR1 + Y-27632 10 µM; then mTeSR1 (no Y)</td><td>2–3 days to 50% confluency</td><td>Ready hPSC monolayer</td></tr>
+        <tr><td>Mesendoderm</td><td>Day 0 →</td><td>A-RPMI + CHIR 5 µM</td><td><span class="dose">24 / 36 / 48 h</span> (36 h optimal)</td><td>BRACHYURY⁺MIXL1⁺ (peak 36–48 h)</td></tr>
+        <tr><td><b>IM induction</b></td><td>after CHIR → Day 3</td><td>+ FGF2 100 ng/ml + RA 1 µM</td><td><span class="dose">2–3 days</span></td><td>PAX2⁺LHX1⁺ IM (peak day 3)</td></tr>
+        <tr><td>Tubule path</td><td>Day 3 → 9</td><td>Withdraw FGF2+RA; serum-free, no added factors</td><td><span class="dose">~6 days</span></td><td>LTL⁺/KSP⁺/N-cad⁺ ciliated tubules (day 7–9)</td></tr>
+        <tr><td>CM path — step A</td><td>Day 0 → 1.5</td><td>CHIR 5 µM</td><td><span class="dose">36 h</span></td><td>mesendoderm</td></tr>
+        <tr><td>CM path — step B</td><td>→ Day 3</td><td>FGF2 100 + RA 1 µM</td><td><span class="dose">36–42 h</span></td><td>PAX2⁺LHX1⁺ IM</td></tr>
+        <tr><td><b>CM path — step C</b></td><td>Day 3 → 6</td><td>FGF9 100 ng/ml + Activin A 10 ng/ml (low density)</td><td><span class="dose">3 days</span></td><td>SIX2⁺SALL1⁺WT1⁺ (day 6)</td></tr>
+        <tr><td>Wnt tubulogenesis</td><td>Day 6 → 7/8</td><td>+ CHIR 5 µM</td><td><span class="dose">24 h</span></td><td>tubules, SIX2↓ LTL↑</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Validation assays — timing</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Assay</th><th>Input timepoint</th><th>Duration</th><th>Readout</th></tr></thead>
+      <tbody>
+        <tr><td>Chimeric kidney explant (reaggregation)</td><td>human cells from day 3, 6, or 9 + E12.5 mouse kidney</td><td>3–5 days culture</td><td>HNA tracking; day-9 cells integrate into laminin-bounded structures; day-3 only interstitial</td></tr>
+        <tr><td>Subcapsular implantation</td><td>day-9 LTL⁺KSP⁺ tubular clumps under NOD-SCID kidney capsule</td><td>harvest at 3 weeks</td><td>AQP1⁺ human growths</td></tr>
+        <tr><td>qRT-PCR maturation time-course</td><td>days 0 → 9</td><td>—</td><td>time-dependent ↑ of SIX2, NEPHRIN, AQP1, MEGALIN, UMOD, AQP2, etc.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="two">
+    <div class="callout"><b>Duration rules that change fate:</b>
+      <ul class="clean note" style="margin-top:8px">
+        <li><b>CHIR 24 h then withdraw</b> → 30–40% revert to OCT4⁺ (incompletely differentiated).</li>
+        <li><b>CHIR 48 h</b> → eliminates OCT4⁺; &gt;80% FOXF1⁺ (lateral plate). Longer CHIR pushes lateral plate fate.</li>
+        <li><b>CHIR 36 h</b> is the sweet spot for downstream IM (highest PAX2).</li>
+      </ul>
+    </div>
+    <div class="callout warn"><b>Transience to respect:</b>
+      <ul class="clean note" style="margin-top:8px">
+        <li>Primitive-streak genes peak 36–48 h, gone by 72 h.</li>
+        <li>IM (PAX2) peaks day 3, falls to &lt;10% by day 7 — capture/branch promptly.</li>
+        <li>Definitive-endoderm window: activin works at 24 h, fails at 48 h.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- MARKERS -->
+<section id="markers">
+  <h2><span class="num">06</span> Marker catalog by stage</h2>
+  <p class="lead">The complete set of markers used to <i>define</i> each developmental stage, with what the marker indicates and how it was detected. Use the filter to focus on one stage. <b>Detection key:</b> IF = immunofluorescence, qPCR = quantitative RT-PCR, Flow = flow cytometry.</p>
+
+  <div class="legend">
+    <span><i style="background:var(--pluri)"></i>Pluripotency</span>
+    <span><i style="background:var(--strk)"></i>Primitive streak / Mesendoderm</span>
+    <span><i style="background:var(--de)"></i>Definitive endoderm</span>
+    <span><i style="background:var(--offm)"></i>Off-target mesoderm</span>
+    <span><i style="background:var(--im)"></i>Intermediate mesoderm</span>
+    <span><i style="background:var(--tub)"></i>Tubule / proximal-tubule</span>
+    <span><i style="background:var(--cm)"></i>Cap mesenchyme</span>
+    <span><i style="background:var(--mat)"></i>Mature nephron (qPCR)</span>
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="on" data-f="all">All stages</button>
+    <button data-f="pluri">Pluripotency</button>
+    <button data-f="strk">Mesendoderm</button>
+    <button data-f="de">Definitive endoderm</button>
+    <button data-f="offm">Off-target mesoderm</button>
+    <button data-f="im">Intermediate mesoderm</button>
+    <button data-f="tub">Tubule</button>
+    <button data-f="cm">Cap mesenchyme</button>
+    <button data-f="mat">Mature nephron</button>
+  </div>
+
+  <div class="stagegrid" id="stagegrid">
+
+    <div class="stageblock" data-stage="pluri">
+      <div class="head"><span class="dot" style="background:var(--pluri)"></span><div><div class="nm">Pluripotent hPSC</div><div class="sub">Day 0 · starting state</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">OCT4</span><div><div class="desc">Core pluripotency TF. Re-appears if CHIR is withdrawn at 24 h (reversion).</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">NANOG</span><div><div class="desc">Core pluripotency TF; falls as mesendoderm genes rise.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">E-cadherin</span><div><div class="desc">Epithelial cadherin of the pre-EMT state; lost during streak formation.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="strk">
+      <div class="head"><span class="dot" style="background:var(--strk)"></span><div><div class="nm">Primitive streak / Mesendoderm</div><div class="sub">~24–48 h · peak 48 h</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">BRACHYURY (T)</span><div><div class="desc">Primitive-streak master marker; 98.7% positive with CHIR at 24 h.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">MIXL1</span><div><div class="desc">Mesendoderm; co-expressed with BRACHYURY, peaks at 48 h.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">EOMES</span><div><div class="desc">Primitive-streak / mesendoderm TF, transiently upregulated.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">GSC</span><div><div class="desc">Goosecoid; organizer/streak gene, transient.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">FOXA2</span><div><div class="desc">Streak/endoderm TF (also marks definitive endoderm).</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SNAI1</span><div><div class="desc">EMT driver; upregulated by 24 h of CHIR.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">N-cadherin</span><div><div class="desc">Post-EMT cadherin; marks the E→N cadherin switch.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="de">
+      <div class="head"><span class="dot" style="background:var(--de)"></span><div><div class="nm">Definitive endoderm</div><div class="sub">alternative fate · CHIR 24 h + high activin</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">SOX17</span><div><div class="desc">Definitive-endoderm master marker; &gt;95% with CHIR 24 h + activin 100 ng/ml.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">FOXA2</span><div><div class="desc">Co-marks definitive endoderm with SOX17.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Insulin / C-peptide / somatostatin</span><div><div class="desc">Pancreatic endocrine derivatives (downstream of DE).</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Albumin</span><div><div class="desc">Mature hepatocyte derivative (downstream of DE).</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="offm">
+      <div class="head"><span class="dot" style="background:var(--offm)"></span><div><div class="nm">Off-target mesoderm</div><div class="sub">CHIR-alone default fate</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">FOXF1</span><div><div class="desc"><b>Lateral plate mesoderm.</b> ~40% at CHIR 24 h, &gt;80% at 48 h — the default to be diverted away from.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">KDR</span><div><div class="desc">Lateral plate / endothelial-hematopoietic mesoderm.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">TBX6</span><div><div class="desc"><b>Paraxial mesoderm</b>; only &lt;10% with CHIR — not efficiently induced.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">MEOX1</span><div><div class="desc">Paraxial mesoderm; not significantly upregulated by IM protocol.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SOX1 / PAX6</span><div><div class="desc">Neuroectoderm; checked and absent (&lt;1%) — confirms no ectoderm.</div><div class="det">IF · qPCR</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="im">
+      <div class="head"><span class="dot" style="background:var(--im)"></span><div><div class="nm">Intermediate mesoderm (TARGET)</div><div class="sub">Day 3 · PAX2⁺LHX1⁺ · transient</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">PAX2</span><div><div class="desc">Early IM marker; <mark>restricted in mesoderm to IM</mark> (the specificity advantage over OSR1). 50–60% with FGF2.</div><div class="det">IF · qPCR · Flow</div></div></div>
+        <div class="mrow"><span class="gene">LHX1</span><div><div class="desc">IM marker (also lateral plate &amp; CNS). With PAX2 → 80–85% double⁺ by flow.</div><div class="det">IF · qPCR · Flow</div></div></div>
+        <div class="mrow"><span class="gene">OSR1</span><div><div class="desc">IM marker, but also lateral plate — why the authors prefer PAX2/LHX1.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">PAX8</span><div><div class="desc">IM marker, upregulated day 3.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">WT1</span><div><div class="desc">IM → urogenital ridge; <b>later</b> marker — low day 3, strongly up day 5.</div><div class="det">qPCR · IF</div></div></div>
+        <div class="mrow"><span class="gene">EYA2/SOX3/OTX2/FOXI3/SIX4</span><div><div class="desc">Non-IM (ear/eye/CNS) PAX2/LHX1 partners — checked and down/unchanged to rule out neuroectoderm.</div><div class="det">qPCR</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="tub">
+      <div class="head"><span class="dot" style="background:var(--tub)"></span><div><div class="nm">Proximal-tubule-like tubules</div><div class="sub">Day 7–9 · spontaneous</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">LTL</span><div><div class="desc">Lotus tetragonolobus lectin; localizes to the <b>apical</b> surface of kidney proximal tubules.</div><div class="det">IF (lectin)</div></div></div>
+        <div class="mrow"><span class="gene">N-cadherin</span><div><div class="desc">Predominant cadherin of proximal tubular cells.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">KSP</span><div><div class="desc">Kidney-specific protein (cadherin-16); marks all kidney tubular epithelia.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Polycystin-2</span><div><div class="desc">Ciliary protein on apical primary cilia — confirms epithelial polarity.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Acetylated α-tubulin</span><div><div class="desc">Primary cilium marker on the apical surface.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Laminin</span><div><div class="desc">Basement-membrane boundary of the tubular structures.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="cm">
+      <div class="head"><span class="dot" style="background:var(--cm)"></span><div><div class="nm">Cap mesenchyme (nephron progenitors)</div><div class="sub">Day 6 · FGF9 + activin</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">SIX2</span><div><div class="desc"><mark>Key marker</mark> of multipotent nephron progenitors; <b>first time generated from hPSCs</b>. Protein needs sustained signaling.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SALL1</span><div><div class="desc">Cap-mesenchyme marker; nearly all SIX2⁺ cells co-express it.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">WT1</span><div><div class="desc">Cap-mesenchyme marker; a subset of SIX2⁺ cells co-express it.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="mat">
+      <div class="head"><span class="dot" style="background:var(--mat)"></span><div><div class="nm">Mature nephron segments</div><div class="sub">qPCR · days 0→9 upregulation</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">AQP1</span><div><div class="desc">Aquaporin-1 — proximal tubule. Also expressed in human subcapsular growths.</div><div class="det">qPCR · IF</div></div></div>
+        <div class="mrow"><span class="gene">MEGALIN</span><div><div class="desc">LRP2 — proximal tubule endocytic receptor.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">NEPHRIN</span><div><div class="desc">NPHS1 — podocyte slit-diaphragm marker.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SYNAPTOPODIN</span><div><div class="desc">Podocyte cytoskeletal marker.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">UMOD</span><div><div class="desc">Uromodulin — loop of Henle (thick ascending limb).</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">AQP2</span><div><div class="desc">Aquaporin-2 — collecting duct.</div><div class="det">qPCR</div></div></div>
+      </div>
+    </div>
+
+  </div>
+  <p class="src">Tracking/structural markers used in explant &amp; implant assays: <b>HNA</b> (human nuclear antigen, traces human cells in mouse explants) and <b>laminin</b> (marks chimeric tubular structures). Negative-control line HKC-8 confirmed PAX2/LHX1 antibody specificity.</p>
+</section>
+
+<!-- LINES -->
+<section id="lines">
+  <h2><span class="num">07</span> Cell lines &amp; controls</h2>
+  <div class="two">
+    <div class="card">
+      <h4>Pluripotent lines (reproducibility set)</h4>
+      <ul class="clean note">
+        <li><b>hESC:</b> H1, H9, CHB8-H2B-GFP</li>
+        <li><b>hiPSC:</b> BJ (human foreskin fibroblast-derived), HDF (adult human dermal fibroblast-derived)</li>
+        <li>Reprogrammed with <b>OCT4, SOX2, KLF4, c-MYC</b> (MSCV-IRES-GFP retrovirus)</li>
+        <li>IM efficiency 70–80% in 4 of 5 lines; slightly reduced in one hiPSC line</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Controls</h4>
+      <ul class="clean note">
+        <li><b>HKC-8</b> — human proximal tubular cell line, PAX2⁻/LHX1⁻; used to set antibody specificity for flow cytometry</li>
+        <li><b>DMSO</b> — vehicle control across factor screens</li>
+        <li><b>E12.5 mouse embryonic kidney</b> — host tissue for chimeric reaggregation explants</li>
+        <li><b>NOD-SCID mice</b> — subcapsular implantation host</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FINDINGS -->
+<section id="findings">
+  <h2><span class="num">08</span> Key findings &amp; context</h2>
+  <div class="grid">
+    <div class="card"><h4>1 · FGF is the missing IM signal</h4><p class="note">FGF2 is identified for the first time as a potent inducer of IM-specific PAX2 in CHIR-primed hPSCs — adding FGF signaling to the previously known Wnt/activin/BMP/RA toolkit.</p></div>
+    <div class="card"><h4>2 · Fast &amp; sort-free</h4><p class="note">PAX2⁺LHX1⁺ IM in just 3 days at 70–80% efficiency, reproducible across 5 hPSC lines without FACS — faster than the 11–18 day OSR1-GFP approach of Mae et al.</p></div>
+    <div class="card"><h4>3 · First hPSC-derived SIX2⁺ progenitors</h4><p class="note">FGF9 + activin A yields SIX2⁺SALL1⁺WT1⁺ cap-mesenchyme cells, consistent with FGF9's in-vivo role maintaining nephron progenitors.</p></div>
+    <div class="card"><h4>4 · BMP7 does NOT help</h4><p class="note">Contrary to several earlier protocols, adding BMP7 to FGF2+RA reduced PAX2 — a notable negative result.</p></div>
+    <div class="card"><h4>5 · Timing dictates fate</h4><p class="note">Identical factors give different outcomes by timing: CHIR length tunes IM vs. lateral plate; activin at 24 h (not 48 h) gives endoderm; IM is a transient 2–3 day window.</p></div>
+    <div class="card"><h4>6 · Functional validation</h4><p class="note">Tubules are polarized &amp; ciliated; day-9 cells integrate into mouse metanephric explants and form AQP1⁺ growths under the kidney capsule — though integration is incomplete.</p></div>
+  </div>
+
+  <div class="callout">Contrast with the literature: differs from <b>Tan et al.</b> (prolonged GSK-3β inhibition → endoderm; here endoderm needs CHIR + high activin) and improves on <b>Mae et al.</b> (OSR1-GFP marks both IM and lateral plate, lower PAX2/WT1 co-expression, longer protocol).</div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div class="disclaim">
+    <b>Source &amp; scope.</b> This is an analysis aid generated from the full text of: Lam AQ, Freedman BS, Morizane R, Lerou PH, Valerius MT, Bonventre JV. "Rapid and Efficient Differentiation of Human Pluripotent Stem Cells into Intermediate Mesoderm That Forms Tubules Expressing Kidney Proximal Tubular Markers." <i>J Am Soc Nephrol</i> 25:1211–1225, 2014 (doi:10.1681/ASN.2013080831). Doses, durations, percentages, and marker assignments are transcribed from the paper's Results, figure legends (Fig 1–5), and Concise Methods. Supplemental Tables 1–2 (antibody &amp; primer lists) are referenced in the paper as online-only and were not part of the provided file. Verify against the primary source before using for protocol design.
+  </div>
+  <p style="margin-top:14px">Generated for guided review · stages color-coded throughout · interactive filter on the Marker Catalog.</p>
+</footer>
+
+<script>
+  // Active section highlight in nav
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ links.forEach(l=>l.classList.remove('active'));
+      const a=map.get(e.target.id); if(a)a.classList.add('active'); } });
+  },{rootMargin:'-45% 0px -50% 0px',threshold:0});
+  document.querySelectorAll('section[id]').forEach(s=>obs.observe(s));
+
+  // Marker stage filter
+  const fbtns=[...document.querySelectorAll('#filters button')];
+  const blocks=[...document.querySelectorAll('#stagegrid .stageblock')];
+  fbtns.forEach(b=>b.addEventListener('click',()=>{
+    fbtns.forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    const f=b.dataset.f;
+    blocks.forEach(bl=>bl.classList.toggle('dim', f!=='all' && bl.dataset.stage!==f));
+  }));
+</script>
+</body>
+</html>
