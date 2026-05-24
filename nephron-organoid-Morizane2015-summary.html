@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summary · Nephron Organoids from hPSCs (Morizane et al., Nat Biotechnol 2015)</title>
+<style>
+  :root{
+    --bg:#f5f8fc; --panel:#ffffff; --panel2:#eef3f9; --ink:#16222f; --muted:#5a6b7d;
+    --line:#dce5ef; --accent:#0d9488; --accent2:#3b5bdb; --warn:#bf7710; --bad:#d63b53;
+    --good:#12895a; --chip:#eef3f9; --shadow:0 6px 22px rgba(22,45,75,.08);
+    --pluri:#8b5cf6; --ps:#e0479b; --pim:#dd8a0b; --npc:#0d9488; --rv:#0ea5e9;
+    --neph:#16a34a; --neg:#7c8aa0; --injury:#d63b53;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:linear-gradient(180deg,#e9f0f8,#f5f8fc 260px);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.86em;color:#0a6b62}
+
+  header.hero{position:relative;padding:44px 0 28px;border-bottom:1px solid var(--line);
+    background:radial-gradient(1100px 360px at 18% -10%,rgba(13,148,136,.12),transparent 60%),
+               radial-gradient(900px 360px at 92% 0%,rgba(59,91,219,.10),transparent 55%);}
+  .kicker{letter-spacing:.16em;text-transform:uppercase;font-size:12px;color:var(--accent);font-weight:700}
+  .followup{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:#fff;background:var(--accent2);border-radius:999px;padding:2px 10px;letter-spacing:.02em}
+  h1.title{font-size:29px;line-height:1.22;margin:10px 0 6px;font-weight:800;max-width:64ch;color:#0e1a26}
+  .byline{color:var(--muted);font-size:14px;max-width:82ch}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .meta .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink);box-shadow:var(--shadow)}
+  .meta .pill b{color:var(--accent)}
+
+  nav.toc{position:sticky;top:0;z-index:50;background:rgba(245,248,252,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:4px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+  nav.toc a{color:var(--muted);font-size:13px;font-weight:600;padding:7px 10px;border-radius:8px;white-space:nowrap}
+  nav.toc a:hover{color:var(--ink);background:var(--panel2);text-decoration:none}
+  nav.toc a.active{color:#fff;background:var(--accent)}
+
+  section{padding:38px 0 8px;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:23px;margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:10px;color:#0e1a26}
+  h2 .num{font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:7px;padding:2px 8px;font-weight:700}
+  .lead{color:var(--muted);max-width:92ch;margin:6px 0 22px}
+  h3{font-size:17px;margin:26px 0 10px;font-weight:700;color:#16222f}
+  .note{color:var(--muted);font-size:13.5px}
+
+  .grid{display:grid;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 8px;font-size:15px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:820px){.two,.three{grid-template-columns:1fr}}
+
+  /* timeline */
+  .tl{display:flex;flex-direction:column;max-width:880px;margin:8px 0 6px}
+  .tl-stage{display:flex;align-items:center;gap:16px}
+  .tl-node{min-width:58px;height:58px;border-radius:14px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(22,45,75,.16);padding:0 8px}
+  .tl-node .d{font-size:10px;font-weight:700;opacity:.92}
+  .tl-node .ab{font-size:13px}
+  .tl-info{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 15px;box-shadow:var(--shadow)}
+  .tl-name{font-weight:800;font-size:14.5px}
+  .tl-mk{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .tl-mk b{color:var(--ink)}
+  .tl-edge{display:flex;align-items:stretch;gap:16px;margin:3px 0}
+  .tl-rail{min-width:58px;flex:0 0 auto;display:flex;justify-content:center;position:relative}
+  .tl-rail i{width:4px;border-radius:3px;background:var(--rail,#cbd5e1)}
+  .tl-rail .tip{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);color:var(--rail,#94a3b8);font-size:16px}
+  .tl-cyto{flex:1;background:var(--panel2);border:1px dashed #c4d2e2;border-radius:11px;padding:8px 14px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .tl-factor{font-weight:800;font-size:13px;color:var(--accent)}
+  .tl-dose{font-size:12px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 7px;white-space:nowrap}
+  .tl-dur{font-size:12px;color:var(--muted)}
+  .tl-win{font-size:11.5px;color:#fff;background:var(--accent);border-radius:999px;padding:2px 9px;margin-left:auto;white-space:nowrap}
+
+  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:680px;background:var(--panel)}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.6px}
+  thead th{background:var(--panel2);color:var(--ink);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  tbody tr:hover{background:#f0f5fb}
+  tbody tr:last-child td{border-bottom:none}
+  td .dose{color:var(--accent);font-weight:700;white-space:nowrap}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
+  .b-win{color:var(--good);border-color:#a6ddc3;background:#e8f7f0}
+  .b-no{color:var(--bad);border-color:#f3c0c9;background:#fdedf0}
+  .b-mid{color:var(--warn);border-color:#f0d59a;background:#fcf3e1}
+
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
+  .filters button{background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .filters button:hover{color:var(--ink);border-color:#c4d2e2}
+  .filters button.on{color:#fff;background:var(--accent);border-color:var(--accent)}
+  .stagegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .stageblock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+  .stageblock .head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .stageblock .head .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+  .stageblock .head .nm{font-weight:800;font-size:14.5px}
+  .stageblock .head .sub{font-size:11.5px;color:var(--muted)}
+  .stageblock .body{padding:10px 14px 14px}
+  .mrow{display:flex;gap:9px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .mrow:last-child{border-bottom:none}
+  .mrow .gene{font-weight:700;font-size:13.5px;min-width:104px}
+  .mrow .desc{font-size:12.5px;color:var(--muted)}
+  .mrow .det{font-size:10.5px;color:var(--accent);font-weight:700;white-space:nowrap;margin-top:1px}
+  .stageblock.dim{display:none}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 16px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .callout{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 12px 12px 0;padding:13px 16px;margin:14px 0;color:var(--ink)}
+  .callout.warn{border-left-color:var(--warn)} .callout.warn b{color:var(--warn)}
+  .callout.link{border-left-color:var(--accent2)} .callout.link b{color:var(--accent2)}
+  .callout b{color:var(--accent)}
+  ul.clean{margin:6px 0;padding-left:20px} ul.clean li{margin:5px 0}
+  mark{background:rgba(13,148,136,.16);color:#0a5c54;padding:0 3px;border-radius:3px}
+  .pm{font-weight:700}
+  .plus{color:var(--good)} .minus{color:var(--bad)}
+  footer{padding:28px 0 60px;color:var(--muted);font-size:12.5px}
+  .disclaim{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;margin-top:14px}
+  .src{font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Guided Paper Summary · Stem-cell Nephrology <span class="followup">Follow-up to Lam et al. 2014</span></div>
+    <h1 class="title">Nephron Organoids Derived from Human Pluripotent Stem Cells Model Kidney Development and Injury</h1>
+    <div class="byline">Morizane R, Lam AQ, Freedman BS, Kishi S, Valerius MT, Bonventre JV. &nbsp;<i>Nature Biotechnology</i> 33(11):1193–1200, 2015. Brigham &amp; Women's Hospital / Harvard Medical School · Harvard Stem Cell Institute.</div>
+    <div class="meta">
+      <span class="pill">DOI <b>10.1038/nbt.3392</b></span>
+      <span class="pill">Headline <b>SIX2⁺ NPCs · 90% in 9 days</b></span>
+      <span class="pill">Output <b>Segmented nephron organoids (2D + 3D)</b></span>
+      <span class="pill">Big idea <b>Posterior vs anterior IM</b></span>
+      <span class="pill">Apps <b>Notch patterning · nephrotoxicity</b></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#bigidea">The big idea</a>
+    <a href="#protocol">Protocol roadmap</a>
+    <a href="#transitions">Transition guide</a>
+    <a href="#organoid">2D vs 3D</a>
+    <a href="#markers">Marker catalog</a>
+    <a href="#apps">Modeling apps</a>
+    <a href="#advance">Advances</a>
+    <a href="#connect">How it connects</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2><span class="num">01</span> What this paper does</h2>
+  <p class="lead">This is the direct successor to Lam et al. (JASN 2014). Where the earlier paper reached intermediate mesoderm (PAX2⁺LHX1⁺) and early tubules, this one builds a complete, chemically defined route from hPSCs to <b>multipotent nephron progenitor cells (NPCs)</b> at 90% efficiency in 9 days, then lets those NPCs <b>self-organize into segmented nephron-like structures</b> — glomerular podocytes, proximal tubules, loops of Henle, and distal tubules — in both 2D and 3D, and uses the organoids to model kidney <b>development</b> and <b>toxicity</b>.</p>
+
+  <div class="three">
+    <div class="card"><h4>① Efficient NPCs</h4><p class="note">CHIR → activin → FGF9 yields <b>SIX2⁺SALL1⁺WT1⁺PAX2⁺</b> NPCs at ~90% in 9 days — a fully defined 2D monolayer protocol.</p></div>
+    <div class="card"><h4>② Self-organizing nephrons</h4><p class="note">A transient CHIR pulse drives NPCs into <b>PAX8⁺LHX1⁺ renal vesicles</b> that self-pattern by day 21 into contiguous, segmented nephron structures.</p></div>
+    <div class="card"><h4>③ A working model</h4><p class="note">Organoids reproduce <b>Notch-dependent</b> proximal patterning and report drug injury (<b>gentamicin, cisplatin</b>) via KIM-1 and γH2AX.</p></div>
+  </div>
+  <div class="callout link">Why it's relevant to you: this is the protocol your <b>Stage 1–2</b> work is built on — <code>CHIR 8 µM × 4 d</code> is exactly its primitive-streak step — and its terminal cell types are your readouts: <b>NPHS1⁺PODXL⁺ podocytes = iPODO</b> and <b>LTL⁺ proximal tubules = iPTEC</b>. See <a href="#connect">How it connects</a>.</div>
+</section>
+
+<!-- BIG IDEA -->
+<section id="bigidea">
+  <h2><span class="num">02</span> The big idea: posterior vs anterior intermediate mesoderm</h2>
+  <p class="lead">The conceptual leap that makes the efficiency jump possible. Metanephric NPCs (the source of all nephron epithelia except collecting duct) arise specifically from <b>posterior</b> IM. Earlier protocols mis-targeted this step.</p>
+  <div class="two">
+    <div class="card">
+      <h4>The mistake earlier protocols made</h4>
+      <ul class="clean note">
+        <li>They pushed cells to the <b>posterior primitive streak</b> using BMP4, assuming that's the kidney route.</li>
+        <li>But posterior primitive streak → <b>lateral plate mesoderm</b> (FOXF1⁺), <i>not</i> IM.</li>
+        <li>Result: low efficiency and mixed identities.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>The fix here</h4>
+      <ul class="clean note">
+        <li>Posterior IM comes from the <b>late-stage (mid) primitive streak</b>, not the posterior streak.</li>
+        <li>Tune two variables: <b>A–P position</b> (CHIR dose + suppress BMP4 with Noggin) and <b>migration timing</b> (CHIR <i>duration</i> = 4 days).</li>
+        <li>Read it out correctly: posterior IM = <b>WT1⁺HOXD11⁺</b>, and crucially <span class="pm minus">PAX2⁻ LHX1⁻</span> (those mark <i>anterior</i> IM).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn">Sensitivity to BMP4: CHIR can drive endogenous BMP4, posteriorizing cells to FOXF1⁺ lateral plate. Adding <b>BMP4 (1 ng/mL)</b> reproduces the failure; adding <b>Noggin (5 ng/mL)</b> rescues it. Each cell line needs its BMP4 tone tuned — the main hESC↔hiPSC difference in the protocol.</div>
+</section>
+
+<!-- PROTOCOL -->
+<section id="protocol">
+  <h2><span class="num">03</span> The protocol roadmap</h2>
+  <p class="lead">The full staged differentiation, with the factor, dose, and duration for each transition and the markers that define each state. Base medium throughout: Advanced RPMI 1640 + 1× L-GlutaMAX. Each node's day is the point at which that state is defined.</p>
+
+  <div class="tl">
+    <!-- Pluripotent -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--pluri)"><span class="d">D0</span><span class="ab">hPSC</span></div>
+      <div class="tl-info"><div class="tl-name">Pluripotent stem cell</div>
+        <div class="tl-mk">ReproFF2 + FGF2 10 ng/mL on Geltrex · plate with Y-27632 · 72 h to ~50% confluent</div></div>
+    </div>
+    <div class="tl-edge"><div class="tl-rail" style="--rail:var(--ps)"><i></i><span class="tip">▼</span></div>
+      <div class="tl-cyto"><span class="tl-factor">+ CHIR99021</span><span class="tl-dose">8 µM (hESC) / 10 µM (hiPSC)</span><span class="tl-dose">+ Noggin 5 ng/mL (hiPSC)</span><span class="tl-dur">4 days</span><span class="tl-win">Day 0 → 4</span></div></div>
+    <!-- Late PS -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--ps)"><span class="d">D4</span><span class="ab">LPS</span></div>
+      <div class="tl-info"><div class="tl-name">Late primitive streak</div>
+        <div class="tl-mk"><b>T (BRACHYURY)⁺ · TBX6⁺</b> &nbsp;<span class="note">avoid FOXF1⁺ (lateral plate)</span></div></div>
+    </div>
+    <div class="tl-edge"><div class="tl-rail" style="--rail:var(--pim)"><i></i><span class="tip">▼</span></div>
+      <div class="tl-cyto"><span class="tl-factor">+ Activin A</span><span class="tl-dose">10 ng/mL</span><span class="tl-dur">3 days</span><span class="tl-win">Day 4 → 7</span></div></div>
+    <!-- Posterior IM -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--pim)"><span class="d">D7</span><span class="ab">post-IM</span></div>
+      <div class="tl-info"><div class="tl-name">Posterior intermediate mesoderm</div>
+        <div class="tl-mk"><b>WT1⁺ · HOXD11⁺ · OSR1⁺</b> &nbsp;<span class="note">~80–90%; PAX2⁻ LHX1⁻ (= not anterior IM)</span></div></div>
+    </div>
+    <div class="tl-edge"><div class="tl-rail" style="--rail:var(--npc)"><i></i><span class="tip">▼</span></div>
+      <div class="tl-cyto"><span class="tl-factor">+ FGF9</span><span class="tl-dose">10 ng/mL</span><span class="tl-dur">days 7–14 (NPC defined by day 9)</span><span class="tl-win">Day 7 → 9</span></div></div>
+    <!-- NPC -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--npc)"><span class="d">D9</span><span class="ab">NPC</span></div>
+      <div class="tl-info"><div class="tl-name">Nephron progenitor cell (metanephric mesenchyme)</div>
+        <div class="tl-mk"><b>SIX2⁺ · SALL1⁺ · WT1⁺ · PAX2⁺ · EYA1⁺ · OSR1⁺</b> &nbsp;<mark>~90% efficiency</mark></div></div>
+    </div>
+    <div class="tl-edge"><div class="tl-rail" style="--rail:var(--rv)"><i></i><span class="tip">▼</span></div>
+      <div class="tl-cyto"><span class="tl-factor">+ CHIR99021 (transient Wnt)</span><span class="tl-dose">3 µM</span><span class="tl-dur">days 9–11, FGF9 maintained to day 14</span><span class="tl-win">Day 9 → 11</span></div></div>
+    <!-- Renal vesicle -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--rv)"><span class="d">D11–14</span><span class="ab">RV</span></div>
+      <div class="tl-info"><div class="tl-name">Renal vesicle (via pre-tubular aggregate)</div>
+        <div class="tl-mk"><b>PAX8⁺ · LHX1⁺ · HNF1β⁺ · BRN1⁺</b>, laminin-bound &nbsp;<span class="note">~75.9% PAX8⁺LHX1⁺</span></div></div>
+    </div>
+    <div class="tl-edge"><div class="tl-rail" style="--rail:var(--neph)"><i></i><span class="tip">▼</span></div>
+      <div class="tl-cyto"><span class="tl-factor">− Withdraw factors</span><span class="tl-dose">basic medium only (from day 14)</span><span class="tl-dur">self-organizing</span><span class="tl-win">Day 14 → 21+</span></div></div>
+    <!-- Nephron -->
+    <div class="tl-stage">
+      <div class="tl-node" style="background:var(--neph)"><span class="d">D21+</span><span class="ab">nephron</span></div>
+      <div class="tl-info"><div class="tl-name">Segmented nephron structures <span class="note">(sustained to day 56)</span></div>
+        <div class="tl-mk"><b>Podocyte</b> NPHS1/PODXL · <b>Proximal tubule</b> LTL/AQP1 · <b>Loop of Henle</b> CDH1/UMOD · <b>Distal</b> CDH1</div></div>
+    </div>
+  </div>
+  <div class="callout">Specificity check: <b>no collecting-duct</b> outgrowth (CDH1⁺DBA⁺ absent) and loss of SIX2/SALL1 in mature structures — confirming pure metanephric-mesenchyme identity, more mature than prior reports, with no ureteric-bud contamination.</div>
+</section>
+
+<!-- TRANSITION GUIDE -->
+<section id="transitions">
+  <h2><span class="num">04</span> Stage-transition guide (factor · dose · duration · window)</h2>
+  <p class="lead">The roadmap in precise tabular form for protocol design. "Add" = exogenous factor introduced; CHIR is used twice, at very different doses.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Step</th><th>From → To</th><th>Factor (dose)</th><th>Duration</th><th>Window</th><th>Defining markers</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>hPSC → Late primitive streak</td><td>CHIR99021 <span class="dose">8 µM (hESC) / 10 µM (hiPSC)</span> ± Noggin 5 ng/mL</td><td>4 days</td><td>D0–4</td><td>T⁺ TBX6⁺ (FOXF1⁻)</td></tr>
+        <tr><td>2</td><td>LPS → Posterior IM</td><td>Activin A <span class="dose">10 ng/mL</span></td><td>3 days</td><td>D4–7</td><td>WT1⁺ HOXD11⁺ OSR1⁺ (PAX2⁻ LHX1⁻)</td></tr>
+        <tr><td>3</td><td>Posterior IM → NPC</td><td>FGF9 <span class="dose">10 ng/mL</span></td><td>D7–14 (NPC by D9)</td><td>D7–9</td><td>SIX2⁺ SALL1⁺ WT1⁺ PAX2⁺ EYA1⁺</td></tr>
+        <tr><td>4</td><td>NPC → Renal vesicle</td><td>CHIR99021 <span class="dose">3 µM</span> (+ FGF9 maintained)</td><td>2 days</td><td>D9–11</td><td>PAX8⁺ LHX1⁺ HNF1β⁺ BRN1⁺ (LAM⁺)</td></tr>
+        <tr><td>5</td><td>RV → Nephron</td><td><i>none</i> — withdraw to basic medium</td><td>self-organizing</td><td>D14–21+</td><td>podocyte / PT / LoH / distal segments</td></tr>
+        <tr><td>3D</td><td>NPC → organoid</td><td>dissociate D9; CHIR 3 µM + FGF9 ×2 d → FGF9 ×3 d → none</td><td>to D21–35</td><td>D9→</td><td>contiguous lumen-bearing nephrons</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn">CHIR has two jobs: <b>8–10 µM (days 0–4)</b> sets late-primitive-streak identity; <b>3 µM (days 9–11)</b> is a transient Wnt pulse that mimics ureteric-bud Wnt9b to trigger mesenchymal-to-epithelial transition into renal vesicles. Dose and timing are not interchangeable.</div>
+</section>
+
+<!-- 2D vs 3D -->
+<section id="organoid">
+  <h2><span class="num">05</span> 2D nephrons vs 3D organoids</h2>
+  <div class="two">
+    <div class="card"><h4>2D monolayer</h4><p class="note">Renal vesicles self-pattern into elongated, segmented nephron structures by day 21; nephron-like structures formed <b>&gt;20× more efficiently</b> than the previous (Lam 2014) protocol and persisted to day 56.</p></div>
+    <div class="card"><h4>3D suspension organoids</h4><p class="note">Dissociate <b>day-9 NPCs</b> into round-bottom ultra-low-attachment wells (1×10⁵/well) → one organoid per well. Day-9 replating gave the best induction. EM showed <b>foot processes, Bowman's-capsule-like</b> encapsulation, tubular <b>lumens, tight junctions, brush borders</b>, mitochondria-rich PT cells.</p></div>
+  </div>
+  <div class="callout">What did <i>not</i> help boosting LTL⁺ tubules in 3D: co-culture with Wnt4-NIH3T3 or a ureteric-bud line, a 6-factor cocktail (BMP7, HGF, IGF-1, JAG1, WNT4, Wnt9b), or CHIR/IWR-1/SB431542 — pointing instead to the importance of correct <i>temporal</i> signaling already built into the protocol.</div>
+</section>
+
+<!-- MARKERS -->
+<section id="markers">
+  <h2><span class="num">06</span> Marker catalog by stage</h2>
+  <p class="lead">Every marker used to define a state, what it indicates, and the <span class="pm plus">+</span>/<span class="pm minus">−</span> logic that distinguishes correct from incorrect fates. Filter to focus on one stage.</p>
+  <div class="legend">
+    <span><i style="background:var(--pluri)"></i>Pluripotent</span>
+    <span><i style="background:var(--ps)"></i>Late primitive streak</span>
+    <span><i style="background:var(--pim)"></i>Posterior IM</span>
+    <span><i style="background:var(--npc)"></i>Nephron progenitor (NPC)</span>
+    <span><i style="background:var(--rv)"></i>Renal vesicle</span>
+    <span><i style="background:var(--neph)"></i>Nephron segments</span>
+    <span><i style="background:var(--neg)"></i>Excluded / interstitium</span>
+  </div>
+  <div class="filters" id="filters">
+    <button class="on" data-f="all">All</button>
+    <button data-f="ps">Primitive streak</button>
+    <button data-f="pim">Posterior IM</button>
+    <button data-f="npc">NPC</button>
+    <button data-f="rv">Renal vesicle</button>
+    <button data-f="neph">Nephron segments</button>
+    <button data-f="neg">Excluded</button>
+  </div>
+
+  <div class="stagegrid" id="stagegrid">
+    <div class="stageblock" data-stage="ps">
+      <div class="head"><span class="dot" style="background:var(--ps)"></span><div><div class="nm">Late primitive streak</div><div class="sub">Day 4 · CHIR</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">T / BRACHYURY</span><div><div class="desc">Primitive-streak marker; induced &amp; maintained by high-dose CHIR.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">TBX6</span><div><div class="desc">Paraxial/streak mesoderm; co-marks the correct late-streak state.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">FOXF1 <span class="pm minus">(avoid)</span></span><div><div class="desc">Posterior-streak / lateral-plate mesoderm. Its appearance (driven by BMP4) signals the <i>wrong</i> fate.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="pim">
+      <div class="head"><span class="dot" style="background:var(--pim)"></span><div><div class="nm">Posterior intermediate mesoderm</div><div class="sub">Day 7 · activin</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">WT1</span><div><div class="desc">Posterior-IM marker; induced by activin on late-streak cells (~90%).</div><div class="det">IF · flow</div></div></div>
+        <div class="mrow"><span class="gene">HOXD11</span><div><div class="desc">Posterior axial identity; defines posterior (vs anterior) IM with WT1.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">OSR1</span><div><div class="desc">IM transcript, high from day 7 through day 9.</div><div class="det">qPCR</div></div></div>
+        <div class="mrow"><span class="gene">PAX2 / LHX1 <span class="pm minus">(absent)</span></span><div><div class="desc">These mark <b>anterior</b> IM — deliberately NOT expressed here, confirming posterior identity.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="npc">
+      <div class="head"><span class="dot" style="background:var(--npc)"></span><div><div class="nm">Nephron progenitor cell</div><div class="sub">Day 9 · FGF9 · ~90%</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">SIX2</span><div><div class="desc"><mark>Defining</mark> multipotent nephron-progenitor marker of the cap mesenchyme.</div><div class="det">IF · flow · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">SALL1</span><div><div class="desc">Cap-mesenchyme NPC marker; co-expressed with SIX2.</div><div class="det">IF · flow</div></div></div>
+        <div class="mrow"><span class="gene">WT1</span><div><div class="desc">Sustained from posterior IM into NPC state.</div><div class="det">IF · flow</div></div></div>
+        <div class="mrow"><span class="gene">PAX2</span><div><div class="desc">Upregulated by day 9 as cells become metanephric NPCs.</div><div class="det">IF · qPCR</div></div></div>
+        <div class="mrow"><span class="gene">EYA1</span><div><div class="desc">Additional NPC/metanephric-mesenchyme marker.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="rv">
+      <div class="head"><span class="dot" style="background:var(--rv)"></span><div><div class="nm">Renal vesicle</div><div class="sub">Day 11–14 · transient CHIR</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">PAX8</span><div><div class="desc">Renal-vesicle marker; ~75.9% PAX8⁺LHX1⁺ after the CHIR pulse.</div><div class="det">IF · flow</div></div></div>
+        <div class="mrow"><span class="gene">LHX1</span><div><div class="desc">Renal-vesicle marker (now appropriate — downstream of MET, not anterior IM).</div><div class="det">IF · flow</div></div></div>
+        <div class="mrow"><span class="gene">HNF1β · BRN1</span><div><div class="desc">Additional renal-vesicle identity markers.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Laminin (LAM)</span><div><div class="desc">LAM⁻ = pre-tubular aggregate; LAM⁺ = polarized renal vesicle.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="neph">
+      <div class="head"><span class="dot" style="background:var(--neph)"></span><div><div class="nm">Nephron segments</div><div class="sub">Day 21+ · self-organized</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">NPHS1 · PODXL</span><div><div class="desc"><b>Podocyte</b> (Nephrin, Podocalyxin) with WT1; foot processes &amp; Bowman's capsule.</div><div class="det">IF · EM</div></div></div>
+        <div class="mrow"><span class="gene">LTL · CDH2</span><div><div class="desc"><b>Proximal tubule</b> (apical LTL, N-cadherin); brush border, AQP1⁺.</div><div class="det">IF · EM</div></div></div>
+        <div class="mrow"><span class="gene">CDH1 · UMOD</span><div><div class="desc"><b>Loop of Henle</b>: descending CDH1⁺AQP1⁺; thick ascending CDH1⁺UMOD⁺.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">CDH1 (UMOD⁻)</span><div><div class="desc"><b>Distal convoluted tubule</b>; E-cadherin⁺ without uromodulin.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">SIX2 / SALL1 <span class="pm minus">(lost)</span></span><div><div class="desc">Absent in mature structures — marks full differentiation beyond the progenitor state.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+
+    <div class="stageblock" data-stage="neg">
+      <div class="head"><span class="dot" style="background:var(--neg)"></span><div><div class="nm">Excluded lineages / interstitium</div><div class="sub">specificity controls</div></div></div>
+      <div class="body">
+        <div class="mrow"><span class="gene">CDH1 · DBA <span class="pm minus">(absent)</span></span><div><div class="desc">Collecting duct (ureteric-bud derived) — absent, confirming pure metanephric mesenchyme.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">FOXD1 <span class="pm minus">(absent)</span></span><div><div class="desc">Metanephric stromal progenitor — not a significant population.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">Endomucin <span class="pm minus">(absent)</span></span><div><div class="desc">Endothelial marker — no significant vasculature.</div><div class="det">IF</div></div></div>
+        <div class="mrow"><span class="gene">α-SMA <span class="pm minus">(absent)</span></span><div><div class="desc">Fibroblast/smooth-muscle marker — minimal.</div><div class="det">IF</div></div></div>
+      </div>
+    </div>
+  </div>
+  <p class="src">Injury marker (applications): <b>KIM-1</b> (proximal-tubule injury biomarker) and <b>γH2AX</b> (DNA-damage marker) — see Modeling applications.</p>
+</section>
+
+<!-- APPS -->
+<section id="apps">
+  <h2><span class="num">07</span> Modeling applications</h2>
+  <div class="two">
+    <div class="card">
+      <h4>Kidney development — Notch patterning</h4>
+      <p class="note">Adding the Notch inhibitor <b>DAPT (10 µM, days 14–21)</b> markedly <b>suppressed proximal-tubule formation</b> in 2D and 3D — recapitulating Notch's known role in proximal nephron patterning. The organoid is a working developmental model.</p>
+    </div>
+    <div class="card">
+      <h4>Nephrotoxicity — drug injury</h4>
+      <ul class="clean note">
+        <li><b>Gentamicin (5 mg/mL, 48 h):</b> KIM-1⁺ at the luminal surface of LTL⁺ proximal tubules (dose-dependent by qPCR); E-cadherin⁺ distal tubules spared.</li>
+        <li><b>Cisplatin (5 µM, 24 h):</b> KIM-1↑ in PT and E-cadherin suppressed (proximal + distal toxicity).</li>
+        <li><b>γH2AX:</b> 5 µM cisplatin → DNA damage in LTL⁺ PT only; 50 µM → widespread (generalized toxicity).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">Because the organoids carry the major nephron segments, they enable <b>segment-specific, patient-specific (iPSC) nephrotoxicity screening</b> — a use case directly relevant to drug development.</div>
+</section>
+
+<!-- ADVANCES -->
+<section id="advance">
+  <h2><span class="num">08</span> Advances over prior work &amp; limitations</h2>
+  <div class="two">
+    <div class="card"><h4>Advances</h4>
+      <ul class="clean note">
+        <li><b>90% SIX2⁺ NPCs in 9 days</b> — vs ~20% in prior hPSC protocols.</li>
+        <li>Nephron-like structures <b>&gt;20× more efficient</b> than the previous (Lam 2014) protocol.</li>
+        <li><b>Posterior-IM strategy</b> (late streak, BMP4 control) instead of posterior streak → correct lineage.</li>
+        <li>Very <b>low FGF9 (10 ng/mL)</b> — ~20× less than earlier reports — implying properly primed precursors.</li>
+        <li>Fully <b>chemically defined</b>, 2D monolayer, fewer steps, no mouse embryonic spinal cord.</li>
+        <li><b>Contiguous, segmented, mature</b> nephrons (lumens, foot processes, brush borders); no collecting-duct/ureteric-bud contamination.</li>
+      </ul>
+    </div>
+    <div class="card"><h4>Limitations (by design)</h4>
+      <ul class="clean note">
+        <li>No <b>ureteric bud</b> → no collecting ducts.</li>
+        <li>No <b>vascular progenitors</b> → no glomerular capillary tuft.</li>
+        <li>Interstitial stroma is minimal (FOXD1⁻).</li>
+        <li>Nephrons self-organize without these components — useful, but not a whole kidney.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONNECT -->
+<section id="connect">
+  <h2><span class="num">09</span> How it connects — to Lam 2014 and to your protocol</h2>
+  <div class="two">
+    <div class="card">
+      <h4>vs Lam et al. 2014 (the predecessor)</h4>
+      <ul class="clean note">
+        <li>Lam: hPSC → <b>anterior</b> IM (PAX2⁺LHX1⁺) via CHIR → FGF2 + RA; reached early tubules &amp; first SIX2⁺ cells.</li>
+        <li>Morizane: targets <b>posterior</b> IM (WT1⁺HOXD11⁺) via CHIR → activin → FGF9; reaches <b>90% NPCs</b> and full segmented nephrons.</li>
+        <li>Same lab, same lineage logic (PSC→ME/PS→IM→MM), but a sharper A–P targeting and a self-organizing organoid endpoint.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>vs your Stage 1–2 work</h4>
+      <ul class="clean note">
+        <li>Your <b>Stage 1 (CHIR 8 µM × 4 d)</b> is exactly this paper's late-primitive-streak step.</li>
+        <li>Your readouts map onto its terminal cells: <b>iPODO ↔ NPHS1⁺PODXL⁺ podocytes</b>; <b>iPTEC (LTL⁺) ↔ LTL⁺ proximal tubules</b>.</li>
+        <li>It hands you defined <b>windows + markers</b> for the steps you wanted to pin down: posterior-IM checkpoint (WT1⁺HOXD11⁺, PAX2⁻LHX1⁻ at D7) and the NPC checkpoint (SIX2⁺SALL1⁺WT1⁺PAX2⁺ at D9).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout link">Practical takeaways for your "minimal-cue at the right window" goal: <b>activin (D4–7)</b> is the lever that decides posterior IM, and a <b>transient low CHIR (3 µM, D9–11)</b> is the lever that converts NPCs to renal vesicles. Reading <b>WT1/HOXD11</b> at D7 and <b>SIX2</b> at D9 would tell you whether your auto-pilot is hitting these checkpoints — and a low <b>FGF9 (10 ng/mL)</b> at D7 is the documented cue to lift NPC (hence downstream iPTEC) yield.</div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div class="disclaim">
+    <b>Source &amp; scope.</b> Generated from the full text of: Morizane R, Lam AQ, Freedman BS, Kishi S, Valerius MT, Bonventre JV. "Nephron organoids derived from human pluripotent stem cells model kidney development and injury." <i>Nat Biotechnol</i> 33(11):1193–1200, 2015 (doi:10.1038/nbt.3392; PMC author manuscript NIHMS728267). Doses, durations, efficiencies, and marker assignments are transcribed from the Results, Methods, and figure legends (Fig 1–6). Supplementary figures/tables referenced in the paper were not part of the provided file. Verify against the primary source before using for protocol design.
+  </div>
+  <p style="margin-top:14px">Follow-up companion to the Lam et al. 2014 summary · light theme · interactive marker filter.</p>
+</footer>
+
+<script>
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=map.get(e.target.id);if(a)a.classList.add('active');}});},{rootMargin:'-45% 0px -50% 0px',threshold:0});
+  document.querySelectorAll('section[id]').forEach(s=>obs.observe(s));
+  const fbtns=[...document.querySelectorAll('#filters button')];
+  const blocks=[...document.querySelectorAll('#stagegrid .stageblock')];
+  fbtns.forEach(b=>b.addEventListener('click',()=>{fbtns.forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.dataset.f;blocks.forEach(bl=>bl.classList.toggle('dim', f!=='all' && bl.dataset.stage!==f));}));
+</script>
+</body>
+</html>
