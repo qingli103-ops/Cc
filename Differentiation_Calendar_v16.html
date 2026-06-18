@@ -932,7 +932,15 @@
   }
 
   /* ----- Body (rows) ----- */
-  .gantt-body { display: flex; flex-direction: column; position: relative; }
+  .gantt-body { display: flex; flex-direction: column; position: relative; min-height: 200px; }
+  /* Horizontal line below the last experiment row so the grid doesn't abruptly end */
+  .gantt-body::after {
+    content: '';
+    display: block;
+    flex: 1;
+    min-height: 80px;
+    border-top: 1px solid var(--grid-line);
+  }
   .gantt-row {
     display: flex;
     height: var(--row-h);
@@ -5780,42 +5788,13 @@ function renderGantt() {
     body.appendChild(row);
   }
 
-  // Filler row: extends the grid lines (horizontal + vertical) into the empty
-  // space below the last experiment row so the grid doesn't visually "stop".
-  const FILLER_HEIGHT = 120; // px of breathing room below last row
-  const filler = document.createElement('div');
-  filler.className = 'gantt-row gantt-filler';
-  filler.style.height = FILLER_HEIGHT + 'px';
-  filler.style.borderBottom = 'none';
-  // Sticky label + format spacers so the track aligns with experiment rows
-  const fillerLabel = document.createElement('div');
-  fillerLabel.style.cssText = `width:${labelWidth}px;flex-shrink:0;position:sticky;left:0;z-index:4;background:#fff;border-right:1px solid var(--grid-line);`;
-  const fillerFmt = document.createElement('div');
-  fillerFmt.style.cssText = `width:${formatWidth}px;flex-shrink:0;position:sticky;left:${labelWidth}px;z-index:4;background:#fff;border-right:1px solid var(--grid-line);`;
-  const fillerTrack = document.createElement('div');
-  fillerTrack.className = 'row-track';
-  fillerTrack.style.minWidth = (totalDays * dayWidth) + 'px';
-  for (let i = 0; i < totalDays; i++) {
-    const d = addDays(start, i);
-    const gc = document.createElement('div');
-    gc.className = 'grid-cell';
-    gc.style.width = dayWidth + 'px';
-    gc.style.height = '100%';
-    if (d.getDay() === 0 || d.getDay() === 6) gc.classList.add('weekend');
-    fillerTrack.appendChild(gc);
-  }
-  filler.appendChild(fillerLabel);
-  filler.appendChild(fillerFmt);
-  filler.appendChild(fillerTrack);
-  body.appendChild(filler);
-
   // Today line spans the entire body
   const offsetToday = daysBetween(start, today);
   if (offsetToday >= 0 && offsetToday < totalDays) {
     const tline = document.createElement('div');
     tline.className = 'today-line';
     tline.style.left = (labelWidth + formatWidth + offsetToday * dayWidth + dayWidth / 2) + 'px';
-    tline.style.height = (experiments.length ? experiments.length * rowHeight + FILLER_HEIGHT : FILLER_HEIGHT) + 'px';
+    tline.style.height = (experiments.length ? experiments.length * rowHeight : 0) + 'px';
     body.style.position = 'relative';
     body.appendChild(tline);
   }
