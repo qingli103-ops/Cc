@@ -744,13 +744,29 @@
   }
 
   /* ----- Header (dates) ----- */
+  /*
+   * Z-INDEX LADDER — must stay above every in-body overlay.
+   * Highest body element is .pred-term-flag at z-index 12.
+   * All chrome starts at 20 so there is headroom for future body layers.
+   *
+   *   22  col-resize-handle  (above the header sticky cols)
+   *   21  .label-col / .format-col inside the header (sticky-left WITHIN sticky-top)
+   *   20  .gantt-header  (sticky-top)
+   *   15  .row-label  (body sticky-left — must beat body overlays ≤12)
+   *   14  .row-format  (body sticky-left)
+   *   12  .pred-term-flag
+   *    9  .pred-term-overlay
+   *    4  .row-label [old, now 15]
+   *    3  .row-format [old, now 14]
+   *    2  bars / bar-overlay
+   */
   .gantt-header {
     display: flex;
     position: sticky;
     top: 0;
     background: #fbfaf6;
     border-bottom: 1px solid var(--grid-line);
-    z-index: 5;
+    z-index: 20;
     height: var(--header-h);
   }
   .label-col {
@@ -760,7 +776,7 @@
     background: #fbfaf6;
     position: sticky;
     left: 0;
-    z-index: 6;
+    z-index: 21;
     display: flex; flex-direction: column; justify-content: center;
     padding: 10px 16px;
   }
@@ -774,7 +790,7 @@
     background: #fbfaf6;
     position: sticky;
     left: var(--label-w);
-    z-index: 6;
+    z-index: 21;
     display: flex; flex-direction: column; justify-content: center;
     padding: 10px 14px;
   }
@@ -787,7 +803,7 @@
     top: 0; right: -4px;
     width: 8px; height: 100%;
     cursor: col-resize;
-    z-index: 7;
+    z-index: 22;
     background: transparent;
     transition: background .12s;
     user-select: none;
@@ -824,7 +840,7 @@
     background: #fff;
     position: sticky;
     left: var(--label-w);
-    z-index: 3;
+    z-index: 14;
     display: flex; align-items: center;
     padding: 0 14px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -961,7 +977,7 @@
     flex-shrink: 0;
     border-right: 1px solid var(--grid-line);
     background: #fff;
-    position: sticky; left: 0; z-index: 4;
+    position: sticky; left: 0; z-index: 15;
     display: flex; flex-direction: column; justify-content: center;
     padding: 8px 16px;
     cursor: pointer;
@@ -1108,7 +1124,7 @@
     pointer-events: auto;
     transform: translate(-50%, -50%);
     /* z-index 2 matches .media-marker and stays BELOW the sticky-left
-       Assay ID column (z-index 4) and Format column (z-index 3), so when
+       Assay ID column (z-index 15) and Format column (z-index 14), so when
        the timeline scrolls right the past markers slide under the columns
        instead of painting on top of them. */
     z-index: 2;
