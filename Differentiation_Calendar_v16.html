@@ -936,10 +936,21 @@
   .gantt-row {
     display: flex;
     height: var(--row-h);
-    border-bottom: 1px solid var(--grid-line);
     position: relative;
   }
-  .gantt-row:last-child { border-bottom: 1px solid var(--grid-line); }
+  /* ===== HARD RULE — horizontal grid line is ALWAYS grey, FULL width =====
+     The line is drawn on the row's children (label + format + track) rather
+     than on .gantt-row itself. Because .row-track carries the timeline's full
+     min-width, its bottom border spans the ENTIRE time axis — including the
+     horizontally-scrolled overflow region on the right — so the grey line is
+     continuous regardless of the time before or after an experiment's bars,
+     and is never overridden by theme, row state (done/terminated/plan), or
+     weekend shading. */
+  .gantt-row > .row-label,
+  .gantt-row > .row-format,
+  .gantt-row > .row-track {
+    border-bottom: 1px solid var(--grid-line) !important;
+  }
   .row-label {
     width: var(--label-w);
     flex-shrink: 0;
@@ -5296,7 +5307,6 @@ function renderGantt() {
   // Keep --cell-w in sync with the current day width so the consistent
   // vertical gridlines in .bar-overlay::after stay aligned with grid cells.
   document.documentElement.style.setProperty('--cell-w', dayWidth + 'px');
-  document.documentElement.style.setProperty('--gantt-track-w', (labelWidth + formatWidth + totalDays * dayWidth) + 'px');
 
   ganttEl.innerHTML = '';
 
