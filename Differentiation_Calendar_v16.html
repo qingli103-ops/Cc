@@ -933,12 +933,12 @@
 
   /* ----- Body (rows) ----- */
   .gantt-body { display: flex; flex-direction: column; position: relative; min-height: 200px; }
-  /* Horizontal line below the last experiment row so the grid doesn't abruptly end */
+  /* Extends the grey grid line below the last experiment row across the full scrollable width */
   .gantt-body::after {
     content: '';
     display: block;
-    flex: 1;
     min-height: 80px;
+    min-width: var(--gantt-track-w, 100%);
     border-top: 1px solid var(--grid-line);
   }
   .gantt-row {
@@ -5304,6 +5304,7 @@ function renderGantt() {
   // Keep --cell-w in sync with the current day width so the consistent
   // vertical gridlines in .bar-overlay::after stay aligned with grid cells.
   document.documentElement.style.setProperty('--cell-w', dayWidth + 'px');
+  document.documentElement.style.setProperty('--gantt-track-w', (labelWidth + formatWidth + totalDays * dayWidth) + 'px');
 
   ganttEl.innerHTML = '';
 
