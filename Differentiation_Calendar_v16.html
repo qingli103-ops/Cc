@@ -872,8 +872,13 @@
     height: var(--mediabnd-h);
     border-top: 1px solid var(--grid-line);
   }
-  .mediabnd-s1 { background: color-mix(in oklch, var(--stage1) 10%, transparent); } /* matches Stage 1 bar colour */
-  .mediabnd-s2 { background: color-mix(in oklch, var(--stage2) 10%, transparent); } /* matches Stage 2 bar colour */
+  /* HARD RULE: media bands must be OPAQUE so body content never shows through
+     them while the sticky header overlaps the rows during vertical scroll.
+     The stage tint is composited over the header's solid bg (#fbfaf6) instead
+     of `transparent`; the band sits behind the per-day cells (which are tinted
+     but semi-transparent), acting as the opaque backstop. */
+  .mediabnd-s1 { background: color-mix(in oklch, var(--stage1) 10%, #fbfaf6); } /* matches Stage 1 bar colour */
+  .mediabnd-s2 { background: color-mix(in oklch, var(--stage2) 10%, #fbfaf6); } /* matches Stage 2 bar colour */
   .mediabnd-cell {
     flex-shrink: 0;
     border-right: 1px solid var(--grid-line);
@@ -1962,6 +1967,9 @@
   body[data-theme="midnight"] .month-cell,
   body[data-theme="midnight"] .day-head,
   body[data-theme="midnight"] .gantt-header { background: #11151c; }
+  /* Keep the media bands opaque in midnight too — composite tint over the dark header bg */
+  body[data-theme="midnight"] .mediabnd-s1 { background: color-mix(in oklch, var(--stage1) 16%, #11151c); }
+  body[data-theme="midnight"] .mediabnd-s2 { background: color-mix(in oklch, var(--stage2) 16%, #11151c); }
   body[data-theme="midnight"] .row-label { background: #161a22; }
   body[data-theme="midnight"] .row-label:hover { background: #1c2230; }
   body[data-theme="midnight"] .format-col { background: #11151c; }
