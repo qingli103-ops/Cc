@@ -932,22 +932,14 @@
   }
 
   /* ----- Body (rows) ----- */
-  .gantt-body { display: flex; flex-direction: column; position: relative; min-height: 200px; }
-  /* Extends the grey grid line below the last experiment row across the full scrollable width */
-  .gantt-body::after {
-    content: '';
-    display: block;
-    min-height: 80px;
-    min-width: var(--gantt-track-w, 100%);
-    border-top: 1px solid var(--grid-line);
-  }
+  .gantt-body { display: flex; flex-direction: column; position: relative; }
   .gantt-row {
     display: flex;
     height: var(--row-h);
     border-bottom: 1px solid var(--grid-line);
     position: relative;
   }
-  .gantt-row:last-child { border-bottom: none; }
+  .gantt-row:last-child { border-bottom: 1px solid var(--grid-line); }
   .row-label {
     width: var(--label-w);
     flex-shrink: 0;
