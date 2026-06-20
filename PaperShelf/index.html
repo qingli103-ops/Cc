@@ -703,6 +703,7 @@ input, textarea { font-family: inherit; }
           <option value="category">Group by category</option>
           <option value="year">Group by year</option>
           <option value="author">Group by author</option>
+          <option value="folder">Group by folder</option>
         </select>
         <button class="rescan-btn" id="rescanBtn" style="display:none">↺ Rescan</button>
         <span class="crumb" id="crumb"></span>
@@ -807,6 +808,7 @@ let activeCat    = "all";
 let activeFilter = "all";
 let sortBy       = "added";
 let groupBy      = "";
+let activeFolder = "all";
 let searchTerm   = "";
 let editingFileName = null;
 let currentBlobUrl  = null;
@@ -900,6 +902,17 @@ async function reconnectFolder() {
   } catch(e) { console.error(e); }
 }
 
+async function* collectPDFs(handle, prefix) {
+  for await (const [name, h] of handle.entries()) {
+    const path = prefix ? `${prefix}/${name}` : name;
+    if (h.kind === "file" && /\.pdf$/i.test(name)) {
+      yield { filePath: path, name, handle: h, folderPath: prefix };
+    } else if (h.kind === "directory") {
+      yield* collectPDFs(h, path);
+    }
+  }
+}
+
 async function scanFolder(firstTime) {
   if (!dirHandle) return;
   busy(true,"Scanning folder…");
@@ -912,23 +925,22 @@ async function scanFolder(firstTime) {
   const fresh = new Set();
   const toExtract = [];
 
-  for await (const [name,handle] of dirHandle.entries()) {
-    if (handle.kind!=="file"||!/\.pdf$/i.test(name)) continue;
-    fresh.add(name);
-    if (!existing[name]) toExtract.push({name,handle});
+  for await (const item of collectPDFs(dirHandle, "")) {
+    fresh.add(item.filePath);
+    if (!existing[item.filePath]) toExtract.push(item);
   }
 
   const removedCount = papers.filter(p=>!fresh.has(p.fileName)).length;
   papers = papers.filter(p=>fresh.has(p.fileName));
 
   let n=0;
-  for (const {name,handle} of toExtract) {
+  for (const {filePath,name,handle,folderPath} of toExtract) {
     n++;
     busy(true,`Reading ${n}/${toExtract.length}: ${name.slice(0,32)}…`);
     let meta={title:"",authors:"",year:""};
     try { const file=await handle.getFile(); meta=await extractMeta(await file.arrayBuffer(),name); }
     catch(e){ console.warn(name,e); meta.title=name.replace(/\.pdf$/i,""); }
-    const paper={fileName:name,title:meta.title,authors:meta.authors,year:meta.year,
+    const paper={fileName:filePath,folderPath:folderPath||"",title:meta.title,authors:meta.authors,year:meta.year,
       category:"",tags:[],notes:"",starred:false,added:Date.now(),lastOpened:null};
     await idbPut("papers",paper);
     papers.push(paper);
@@ -944,9 +956,11 @@ async function scanFolder(firstTime) {
 }
 
 // ── Open helpers ─────────────────────────────────────────────────────────────
-async function getFileBlob(fileName) {
-  const fh = await dirHandle.getFileHandle(fileName);
-  return fh.getFile();
+async function getFileBlob(filePath) {
+  const parts = filePath.split("/");
+  let h = dirHandle;
+  for (let i = 0; i < parts.length - 1; i++) h = await h.getDirectoryHandle(parts[i]);
+  return (await h.getFileHandle(parts[parts.length - 1])).getFile();
 }
 
 async function openInBrowser(fileName) {
@@ -974,7 +988,8 @@ async function openInBrowser(fileName) {
   sel.innerHTML = `<option value="">— Uncategorized —</option>`+
     categories.map(c=>`<option value="${c.id}" ${c.id===p.category?"selected":""}>${esc(c.name)}</option>`).join("");
   updateStarBtn(p.starred);
-  $("fInfo").textContent=`${fileName} · added ${new Date(p.added).toLocaleDateString()}`;
+  const baseName=fileName.split("/").pop();
+  $("fInfo").textContent=`${baseName}${p.folderPath?" · 📁 "+p.folderPath:""} · added ${new Date(p.added).toLocaleDateString()}`;
   $("reader").classList.add("open");
 }
 
@@ -1048,6 +1063,7 @@ function visiblePapers() {
   let list = papers.slice();
   if (activeCat==="uncat")    list=list.filter(p=>!p.category);
   else if (activeCat!=="all") list=list.filter(p=>p.category===activeCat);
+  if (activeFolder!=="all")   list=list.filter(p=>(p.folderPath||"")===activeFolder);
   if (activeFilter==="starred") list=list.filter(p=>p.starred);
   if (activeFilter==="notes")   list=list.filter(p=>p.notes&&p.notes.trim());
   if (activeFilter==="unread")  list=list.filter(p=>!p.lastOpened);
@@ -1083,6 +1099,7 @@ function groupPapers(list) {
     if (groupBy==="category") { const cat=categories.find(c=>c.id===p.category); key=cat?cat.name:"Uncategorized"; }
     else if (groupBy==="year") { key=p.year||"Year unknown"; }
     else if (groupBy==="author") { const first=(p.authors||"").split(/[,;&]/)[0].trim(); key=first?first.split(/\s+/).pop():"Unknown"; }
+    else if (groupBy==="folder") { key=p.folderPath||"Root folder"; }
     if (!groups[key]) groups[key]=[];
     groups[key].push(p);
   });
@@ -1092,6 +1109,15 @@ function groupPapers(list) {
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
+function folderItem(id, label) {
+  const cnt = id==="all" ? papers.length : papers.filter(p=>(p.folderPath||"")===id).length;
+  return `<div class="cat ${activeFolder===id?"active":""}" data-folder="${esc(id)}">
+    <span class="swatch" style="background:#56cfcf;box-shadow:0 0 5px #56cfcf40"></span>
+    <span class="label">📁 ${esc(label)}</span>
+    <span class="count">${cnt}</span>
+  </div>`;
+}
+
 function renderNav() {
   const counts={all:papers.length, uncat:papers.filter(p=>!p.category).length};
   categories.forEach(c=>(counts[c.id]=papers.filter(p=>p.category===c.id).length));
@@ -1107,6 +1133,14 @@ function renderNav() {
   html+=`<div class="nav-head" style="margin-top:8px">Categories <button id="navAdd">+</button></div>`;
   categories.forEach((c,i)=>(html+=item(c.id,c.name,palette[i%palette.length])));
   html+=item("uncat","Uncategorized","#445566");
+
+  const folderSet=[...new Set(papers.map(p=>p.folderPath||"").filter(Boolean))].sort();
+  if (folderSet.length) {
+    html+=`<div class="nav-head" style="margin-top:8px">Folders</div>`;
+    html+=folderItem("all","All folders");
+    folderSet.forEach(f=>html+=folderItem(f,f));
+  }
+
   $("nav").innerHTML=html;
   $("nav").querySelector("#navAdd").onclick=openCatModal;
 }
@@ -1152,6 +1186,7 @@ function renderGrid() {
         <div class="tags-row">
           ${isUnread?'<span class="unread-dot" title="Not yet opened"></span>':""}
           ${cn?`<span class="pill cat-pill">${esc(cn)}</span>`:""}
+          ${p.folderPath?`<span class="pill" style="color:var(--muted);font-size:10.5px">📁 ${esc(p.folderPath)}</span>`:""}
           ${tags}
           ${hasNotes?'<span class="has-notes">📝</span>':""}
           <span style="margin-left:auto;font-size:11.5px;color:var(--muted)">${esc(p.year)||""}</span>
@@ -1203,6 +1238,8 @@ document.addEventListener("click",e=>{
   if (delcat) { e.stopPropagation(); deleteCat(delcat.dataset.delcat); return; }
   const catEl=e.target.closest("[data-cat]");
   if (catEl) { activeCat=catEl.dataset.cat; render(); return; }
+  const folderEl=e.target.closest("[data-folder]");
+  if (folderEl) { activeFolder=folderEl.dataset.folder; render(); return; }
   const star=e.target.closest("[data-star]");
   if (star) { e.stopPropagation(); toggleStar(star.dataset.star); return; }
   const read=e.target.closest("[data-read]");
