@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PaperShelf — organize & read your PDFs</title>
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --panel: #ffffff;
+    --ink: #1d2127;
+    --muted: #6b7280;
+    --line: #e4e2db;
+    --accent: #2f6f4e;
+    --accent-soft: #e7f0ea;
+    --danger: #b4453a;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 6px 18px rgba(0,0,0,.05);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  .app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .brand {
+    padding: 18px 18px 12px;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -.02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
+  .brand small { font-weight: 500; color: var(--muted); font-size: 11px; }
+
+  .add-btn {
+    margin: 4px 14px 12px;
+    padding: 10px 12px;
+    border: none; border-radius: 9px;
+    background: var(--accent); color: #fff; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .add-btn:hover { filter: brightness(1.05); }
+
+  .nav { overflow-y: auto; padding: 4px 8px 12px; flex: 1; min-height: 0; }
+  .nav-head {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); padding: 12px 10px 5px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-head button {
+    border: none; background: none; color: var(--muted); font-size: 15px;
+    line-height: 1; padding: 0 2px; border-radius: 4px;
+  }
+  .nav-head button:hover { color: var(--accent); background: var(--accent-soft); }
+  .cat {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 8px; color: var(--ink);
+    user-select: none; position: relative;
+  }
+  .cat:hover { background: #f1efe9; }
+  .cat.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .cat .swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--muted); }
+  .cat .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat .count { font-size: 11px; color: var(--muted); background: #efeee8; padding: 1px 7px; border-radius: 10px; }
+  .cat.active .count { background: #fff; }
+  .cat .del { display: none; border: none; background: none; color: var(--muted); font-size: 14px; padding: 0 2px; }
+  .cat:hover .del { display: inline; }
+  .cat .del:hover { color: var(--danger); }
+
+  /* Main */
+  .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .topbar {
+    padding: 14px 22px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px; background: var(--panel);
+  }
+  .search { flex: 1; position: relative; max-width: 520px; }
+  .search input {
+    width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--line);
+    border-radius: 9px; font-size: 14px; background: #fbfaf7; color: var(--ink);
+  }
+  .search input:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .topbar .sort { padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fbfaf7; color: var(--ink); }
+  .crumb { font-size: 13px; color: var(--muted); }
+  .crumb b { color: var(--ink); font-weight: 600; }
+
+  .content { flex: 1; overflow-y: auto; padding: 22px; min-height: 0; }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: var(--radius);
+    padding: 40px 20px; text-align: center; color: var(--muted);
+    margin-bottom: 22px; transition: .15s; background: var(--panel);
+  }
+  .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .dropzone b { color: var(--ink); }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 9px;
+    cursor: pointer; transition: .12s; position: relative;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.08), 0 12px 28px rgba(0,0,0,.07); }
+  .card .ttl { font-weight: 650; font-size: 14.5px; line-height: 1.3; letter-spacing: -.01em;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .meta { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .foot { display: flex; align-items: center; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+  .pill { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: #f1efe9; color: var(--muted); white-space: nowrap; }
+  .pill.cat-pill { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #eef1f4; color: #51607a; }
+  .card .year { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+  .empty .big { font-size: 40px; margin-bottom: 10px; }
+
+  /* Reader overlay */
+  .reader { position: fixed; inset: 0; background: rgba(20,22,26,.55); display: none; z-index: 50; }
+  .reader.open { display: grid; grid-template-columns: 1fr 360px; }
+  .reader .pdf { background: #33373d; min-width: 0; }
+  .reader .pdf iframe { width: 100%; height: 100%; border: none; }
+  .reader .side {
+    background: var(--panel); display: flex; flex-direction: column; min-height: 0;
+    box-shadow: -8px 0 28px rgba(0,0,0,.2);
+  }
+  .reader .side-head { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .reader .side-head .x { margin-left: auto; border: none; background: #f1efe9; width: 30px; height: 30px; border-radius: 8px; font-size: 17px; color: var(--ink); }
+  .reader .side-head .x:hover { background: #e4e2db; }
+  .reader .side-body { padding: 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13.5px; font-family: inherit; background: #fbfaf7; color: var(--ink);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .side-foot { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 10px; }
+  .side-foot button { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-weight: 600; color: var(--ink); }
+  .side-foot .save { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .side-foot .save:hover { filter: brightness(1.05); }
+  .side-foot .del { color: var(--danger); border-color: #e9cfcb; }
+  .side-foot .del:hover { background: #fbeeec; }
+
+  /* Modal (new category) */
+  .modal { position: fixed; inset: 0; background: rgba(20,22,26,.45); display: none; align-items: center; justify-content: center; z-index: 60; }
+  .modal.open { display: flex; }
+  .modal .box { background: var(--panel); border-radius: var(--radius); padding: 22px; width: 340px; box-shadow: var(--shadow); }
+  .modal h3 { margin: 0 0 14px; font-size: 16px; }
+  .modal input { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+  .modal input:focus { outline: none; border-color: var(--accent); }
+  .modal .row { display: flex; gap: 10px; }
+  .modal .row button { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-weight: 600; }
+  .modal .row .ok { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Toast + busy */
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 10px 18px; border-radius: 10px; font-size: 13px; opacity: 0; transition: .25s; pointer-events: none; z-index: 80; }
+  .toast.show { opacity: 1; }
+  .busy { position: fixed; top: 14px; right: 18px; background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 9px;
+    font-size: 12.5px; display: none; align-items: center; gap: 8px; z-index: 80; }
+  .busy.show { display: flex; }
+  .spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .reader.open { grid-template-columns: 1fr; }
+    .reader .pdf { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span> PaperShelf <small>· local</small></div>
+    <button class="add-btn" id="addBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      Add PDFs
+    </button>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="search" placeholder="Search title, author, tag…" />
+      </div>
+      <select class="sort" id="sort">
+        <option value="added">Recently added</option>
+        <option value="year">Year (newest)</option>
+        <option value="title">Title A–Z</option>
+        <option value="author">Author A–Z</option>
+      </select>
+      <span class="crumb" id="crumb"></span>
+    </div>
+    <div class="content" id="content">
+      <div class="dropzone" id="dropzone">
+        <div style="font-size:26px;margin-bottom:6px">📄</div>
+        <div><b>Drop PDF papers here</b> or click “Add PDFs”.</div>
+        <div style="font-size:12px;margin-top:5px">Files stay in your browser. Title, authors &amp; year are read automatically.</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Reader -->
+<div class="reader" id="reader">
+  <div class="pdf"><iframe id="pdfFrame" title="PDF"></iframe></div>
+  <div class="side">
+    <div class="side-head">
+      <strong style="font-size:14px">Paper details</strong>
+      <button class="x" id="readerClose">×</button>
+    </div>
+    <div class="side-body">
+      <div class="field"><label>Title</label><textarea id="fTitle" rows="2"></textarea></div>
+      <div class="field"><label>Authors</label><input id="fAuthors" /></div>
+      <div class="field"><label>Year</label><input id="fYear" /></div>
+      <div class="field"><label>Category</label><select id="fCategory"></select></div>
+      <div class="field"><label>Tags <span style="text-transform:none;font-weight:500">(comma-separated)</span></label><input id="fTags" /></div>
+      <div class="field"><label>Notes</label><textarea id="fNotes" rows="4" placeholder="Key findings, why it matters…"></textarea></div>
+      <div class="field hint" id="fInfo"></div>
+    </div>
+    <div class="side-foot">
+      <button class="del" id="fDelete">Delete</button>
+      <button class="save" id="fSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- New category modal -->
+<div class="modal" id="catModal">
+  <div class="box">
+    <h3>New category</h3>
+    <input id="catName" placeholder="e.g. Kidney organoids" />
+    <div class="row">
+      <button id="catCancel">Cancel</button>
+      <button class="ok" id="catCreate">Create</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="application/pdf" multiple style="display:none" />
+<div class="busy" id="busy"><span class="spin"></span><span id="busyText">Working…</span></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+"use strict";
+
+// ---- PDF.js worker ----
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+// ---- IndexedDB tiny wrapper ----
+const DB_NAME = "papershelf", DB_VER = 1;
+let db;
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains("papers")) d.createObjectStore("papers", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("files")) d.createObjectStore("files", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("meta")) d.createObjectStore("meta", { keyPath: "key" });
+    };
+    req.onsuccess = () => { db = req.result; res(); };
+    req.onerror = () => rej(req.error);
+  });
+}
+function tx(store, mode) { return db.transaction(store, mode).objectStore(store); }
+function idbPut(store, val) { return new Promise((res, rej) => { const r = tx(store, "readwrite").put(val); r.onsuccess = res; r.onerror = () => rej(r.error); }); }
+function idbGet(store, key) { return new Promise((res, rej) => { const r = tx(store, "readonly").get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+function idbDel(store, key) { return new Promise((res, rej) => { const r = tx(store, "readwrite").delete(key); r.onsuccess = res; r.onerror = () => rej(r.error); }); }
+function idbAll(store) { return new Promise((res, rej) => { const r = tx(store, "readonly").getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error); }); }
+
+// ---- State ----
+let papers = [];          // {id, title, authors, year, category, tags[], notes, fileSize, added}
+let categories = [];      // {id, name}
+let activeCat = "all";    // "all" | "uncat" | category id
+let searchTerm = "";
+let sortBy = "added";
+let currentBlobUrl = null;
+let editingId = null;
+
+// ---- Helpers ----
+const $ = (id) => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function esc(s) { return (s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 2200); }
+function busy(on, text) { const b = $("busy"); $("busyText").textContent = text || "Working…"; b.classList.toggle("show", !!on); }
+function catName(id) { const c = categories.find((c) => c.id === id); return c ? c.name : null; }
+
+// ---- Metadata extraction ----
+async function extractMeta(arrayBuffer, fallbackName) {
+  const out = { title: "", authors: "", year: "" };
+  try {
+    const doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    // 1) Embedded document info
+    try {
+      const m = await doc.getMetadata();
+      const info = m && m.info ? m.info : {};
+      if (info.Title && info.Title.trim().length > 4 && !/^(untitled|microsoft word|\d+\.(doc|pdf))/i.test(info.Title.trim()))
+        out.title = info.Title.trim();
+      if (info.Author && info.Author.trim().length > 1) out.authors = info.Author.trim();
+    } catch (e) {}
+
+    // 2) First-page text: biggest-font line near the top = likely title
+    const page = await doc.getPage(1);
+    const tc = await page.getTextContent();
+    const items = tc.items.filter((i) => i.str && i.str.trim());
+    // group items into lines by their y position
+    const lines = [];
+    items.forEach((it) => {
+      const y = Math.round(it.transform[5]);
+      const size = Math.hypot(it.transform[0], it.transform[1]);
+      let line = lines.find((l) => Math.abs(l.y - y) < 4);
+      if (!line) { line = { y, size: 0, text: "" }; lines.push(line); }
+      line.text += it.str;
+      line.size = Math.max(line.size, size);
+    });
+    lines.sort((a, b) => b.y - a.y); // top of page first
+
+    if (!out.title && lines.length) {
+      const top = lines.slice(0, Math.min(lines.length, 18));
+      const maxSize = Math.max(...top.map((l) => l.size));
+      // merge consecutive near-max-size lines into a title block
+      let titleParts = [];
+      for (const l of top) {
+        const t = l.text.trim();
+        if (l.size >= maxSize - 0.6 && t.length > 1 && !/^\d+$/.test(t)) titleParts.push(t);
+        else if (titleParts.length) break;
+      }
+      let cand = titleParts.join(" ").replace(/\s+/g, " ").trim();
+      if (cand.length > 6 && cand.length < 320) out.title = cand;
+    }
+
+    // 3) Year: scan first two pages for a plausible publication year
+    let txt = lines.map((l) => l.text).join(" ");
+    if (doc.numPages > 1) {
+      try { const p2 = await doc.getPage(2); const t2 = await p2.getTextContent(); txt += " " + t2.items.map((i) => i.str).join(" "); } catch (e) {}
+    }
+    const years = (txt.match(/\b(19|20)\d{2}\b/g) || []).map(Number).filter((y) => y >= 1950 && y <= new Date().getFullYear() + 1);
+    if (years.length) {
+      // most frequent year wins; tie-break on most recent
+      const freq = {}; years.forEach((y) => (freq[y] = (freq[y] || 0) + 1));
+      out.year = String(Object.keys(freq).sort((a, b) => freq[b] - freq[a] || b - a)[0]);
+    }
+    await doc.destroy();
+  } catch (e) {
+    console.warn("extract failed", e);
+  }
+  if (!out.title) out.title = (fallbackName || "Untitled").replace(/\.pdf$/i, "");
+  return out;
+}
+
+// ---- Import ----
+async function importFiles(fileList) {
+  const files = Array.from(fileList).filter((f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
+  if (!files.length) { toast("No PDF files found"); return; }
+  let n = 0;
+  for (const f of files) {
+    n++;
+    busy(true, `Reading ${n}/${files.length}: ${f.name.slice(0, 28)}…`);
+    const buf = await f.arrayBuffer();
+    // extractMeta consumes the buffer; keep a copy for storage
+    const meta = await extractMeta(buf.slice(0), f.name);
+    const id = uid();
+    await idbPut("files", { id, blob: new Blob([buf], { type: "application/pdf" }) });
+    const paper = {
+      id, title: meta.title, authors: meta.authors, year: meta.year,
+      category: activeCat !== "all" && activeCat !== "uncat" ? activeCat : "",
+      tags: [], notes: "", fileSize: f.size, fileName: f.name, added: Date.now(),
+    };
+    await idbPut("papers", paper);
+    papers.push(paper);
+  }
+  busy(false);
+  await persistMeta();
+  render();
+  toast(`Added ${files.length} paper${files.length > 1 ? "s" : ""}`);
+}
+
+// ---- Persistence of categories ----
+async function persistMeta() { await idbPut("meta", { key: "categories", value: categories }); }
+
+// ---- Rendering ----
+function visiblePapers() {
+  let list = papers.slice();
+  if (activeCat === "uncat") list = list.filter((p) => !p.category);
+  else if (activeCat !== "all") list = list.filter((p) => p.category === activeCat);
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    list = list.filter((p) =>
+      (p.title || "").toLowerCase().includes(q) ||
+      (p.authors || "").toLowerCase().includes(q) ||
+      (p.tags || []).join(" ").toLowerCase().includes(q) ||
+      (p.notes || "").toLowerCase().includes(q));
+  }
+  list.sort((a, b) => {
+    if (sortBy === "year") return (Number(b.year) || 0) - (Number(a.year) || 0);
+    if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
+    if (sortBy === "author") return (a.authors || "").localeCompare(b.authors || "");
+    return b.added - a.added;
+  });
+  return list;
+}
+
+function renderNav() {
+  const nav = $("nav");
+  const counts = { all: papers.length, uncat: papers.filter((p) => !p.category).length };
+  categories.forEach((c) => (counts[c.id] = papers.filter((p) => p.category === c.id).length));
+  let html = "";
+  const item = (id, label, swatch) => `
+    <div class="cat ${activeCat === id ? "active" : ""}" data-cat="${id}">
+      ${swatch ? '<span class="swatch" style="background:' + swatch + '"></span>' : '<span class="swatch" style="background:transparent"></span>'}
+      <span class="label">${esc(label)}</span>
+      <span class="count">${counts[id] || 0}</span>
+      ${id !== "all" && id !== "uncat" ? '<button class="del" data-delcat="' + id + '" title="Delete category">×</button>' : ""}
+    </div>`;
+  html += item("all", "All papers", "#9aa3af");
+  html += `<div class="nav-head">Categories <button id="navAdd" title="New category">+</button></div>`;
+  const palette = ["#2f6f4e", "#3b6ea5", "#a55b2f", "#7a4fa3", "#b4453a", "#2f8f8f", "#94782f"];
+  categories.forEach((c, i) => (html += item(c.id, c.name, palette[i % palette.length])));
+  html += item("uncat", "Uncategorized", "#c4c1b8");
+  nav.innerHTML = html;
+}
+
+function renderGrid() {
+  const grid = $("grid");
+  const list = visiblePapers();
+  $("crumb").innerHTML = `<b>${list.length}</b> paper${list.length === 1 ? "" : "s"}`;
+  if (!papers.length) { grid.innerHTML = ""; return; }
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div>No papers match.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map((p) => {
+    const cn = catName(p.category);
+    const tags = (p.tags || []).slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join("");
+    return `
+      <div class="card" data-id="${p.id}">
+        <div class="ttl">${esc(p.title)}</div>
+        <div class="meta">${esc(p.authors) || "<span style='opacity:.6'>Authors not detected</span>"}</div>
+        <div class="foot">
+          ${cn ? '<span class="pill cat-pill">' + esc(cn) + "</span>" : ""}
+          ${tags}
+          <span class="year">${esc(p.year) || ""}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function render() { renderNav(); renderGrid(); }
+
+// ---- Reader ----
+async function openReader(id) {
+  const p = papers.find((x) => x.id === id);
+  if (!p) return;
+  editingId = id;
+  const rec = await idbGet("files", id);
+  if (rec && rec.blob) {
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = URL.createObjectURL(rec.blob);
+    $("pdfFrame").src = currentBlobUrl;
+  }
+  $("fTitle").value = p.title || "";
+  $("fAuthors").value = p.authors || "";
+  $("fYear").value = p.year || "";
+  $("fTags").value = (p.tags || []).join(", ");
+  $("fNotes").value = p.notes || "";
+  const sel = $("fCategory");
+  sel.innerHTML = `<option value="">— Uncategorized —</option>` +
+    categories.map((c) => `<option value="${c.id}" ${c.id === p.category ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+  const kb = p.fileSize ? (p.fileSize / 1024 / 1024).toFixed(1) + " MB" : "";
+  $("fInfo").textContent = [p.fileName, kb, "added " + new Date(p.added).toLocaleDateString()].filter(Boolean).join(" · ");
+  $("reader").classList.add("open");
+}
+function closeReader() {
+  $("reader").classList.remove("open");
+  $("pdfFrame").src = "about:blank";
+  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+  editingId = null;
+}
+async function saveEdit() {
+  const p = papers.find((x) => x.id === editingId);
+  if (!p) return;
+  p.title = $("fTitle").value.trim() || p.title;
+  p.authors = $("fAuthors").value.trim();
+  p.year = $("fYear").value.trim();
+  p.category = $("fCategory").value;
+  p.tags = $("fTags").value.split(",").map((t) => t.trim()).filter(Boolean);
+  p.notes = $("fNotes").value;
+  await idbPut("papers", p);
+  render();
+  toast("Saved");
+}
+async function deletePaper() {
+  if (!editingId) return;
+  if (!confirm("Delete this paper and its PDF from PaperShelf?")) return;
+  await idbDel("papers", editingId);
+  await idbDel("files", editingId);
+  papers = papers.filter((x) => x.id !== editingId);
+  closeReader();
+  render();
+  toast("Deleted");
+}
+
+// ---- Categories ----
+function openCatModal() { $("catModal").classList.add("open"); $("catName").value = ""; setTimeout(() => $("catName").focus(), 30); }
+function closeCatModal() { $("catModal").classList.remove("open"); }
+async function createCat() {
+  const name = $("catName").value.trim();
+  if (!name) return;
+  const c = { id: uid(), name };
+  categories.push(c);
+  await persistMeta();
+  closeCatModal();
+  render();
+}
+async function deleteCat(id) {
+  if (!confirm("Delete this category? Papers in it become uncategorized.")) return;
+  categories = categories.filter((c) => c.id !== id);
+  for (const p of papers) if (p.category === id) { p.category = ""; await idbPut("papers", p); }
+  if (activeCat === id) activeCat = "all";
+  await persistMeta();
+  render();
+}
+
+// ---- Events ----
+function wire() {
+  $("addBtn").onclick = () => $("fileInput").click();
+  $("fileInput").onchange = (e) => { importFiles(e.target.files); e.target.value = ""; };
+
+  const dz = $("dropzone");
+  const content = $("content");
+  ["dragenter", "dragover"].forEach((ev) => content.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach((ev) => content.addEventListener(ev, (e) => { e.preventDefault(); if (ev === "drop" || e.target === content || e.target === dz) dz.classList.remove("drag"); }));
+  content.addEventListener("drop", (e) => { e.preventDefault(); dz.classList.remove("drag"); if (e.dataTransfer.files.length) importFiles(e.dataTransfer.files); });
+
+  $("search").oninput = (e) => { searchTerm = e.target.value; renderGrid(); };
+  $("sort").onchange = (e) => { sortBy = e.target.value; renderGrid(); };
+
+  $("nav").addEventListener("click", (e) => {
+    const delBtn = e.target.closest("[data-delcat]");
+    if (delBtn) { e.stopPropagation(); deleteCat(delBtn.dataset.delcat); return; }
+    if (e.target.id === "navAdd") { openCatModal(); return; }
+    const cat = e.target.closest("[data-cat]");
+    if (cat) { activeCat = cat.dataset.cat; render(); }
+  });
+
+  $("grid").addEventListener("click", (e) => {
+    const card = e.target.closest("[data-id]");
+    if (card) openReader(card.dataset.id);
+  });
+
+  $("readerClose").onclick = closeReader;
+  $("fSave").onclick = saveEdit;
+  $("fDelete").onclick = deletePaper;
+  $("catCancel").onclick = closeCatModal;
+  $("catCreate").onclick = createCat;
+  $("catName").addEventListener("keydown", (e) => { if (e.key === "Enter") createCat(); });
+  $("catModal").addEventListener("click", (e) => { if (e.target.id === "catModal") closeCatModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeReader(); closeCatModal(); } });
+}
+
+// ---- Boot ----
+(async function init() {
+  wire();
+  await openDB();
+  papers = await idbAll("papers");
+  const cm = await idbGet("meta", "categories");
+  categories = cm && cm.value ? cm.value : [];
+  if (!categories.length) {
+    // sensible starter categories for a research workflow
+    categories = [
+      { id: uid(), name: "To read" },
+      { id: uid(), name: "Methods / protocols" },
+      { id: uid(), name: "Key references" },
+    ];
+    await persistMeta();
+  }
+  render();
+})();
+</script>
+</body>
+</html>
