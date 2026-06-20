@@ -388,6 +388,35 @@ input, textarea { font-family: inherit; }
 .btn-read:hover::before { animation-duration: 3s; filter: brightness(1.18); }
 
 
+/* ── Sidebar footer ── */
+.sidebar-foot {
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.reset-btn {
+  width: 100%; padding: 7px 10px; border-radius: 9px;
+  border: 1px solid rgba(255,78,106,0.20);
+  background: rgba(255,78,106,0.06);
+  color: var(--danger); font-size: 12px; font-weight: 600;
+  transition: all .18s;
+}
+.reset-btn:hover { background: rgba(255,78,106,0.14); border-color: rgba(255,78,106,0.45); box-shadow: 0 0 10px rgba(255,78,106,0.18); }
+[data-theme="light"] .reset-btn { border-color: rgba(194,32,32,0.20); background: rgba(194,32,32,0.05); color: var(--danger); }
+[data-theme="light"] .reset-btn:hover { background: rgba(194,32,32,0.12); }
+
+/* ── Danger modal button ── */
+.modal .row .danger-ok {
+  color: #ffd4d4;
+  background: transparent; border: none;
+}
+.modal .row .danger-ok::before {
+  background: linear-gradient(135deg, #ff2244, #c40064, #ff4400, #ff2244);
+  background-size: 400% 400%; animation: aurora-spin 4s linear infinite;
+}
+.modal .row .danger-ok::after { background: rgba(50, 5, 5, 0.88); }
+[data-theme="light"] .modal .row .danger-ok::after { background: rgba(80, 5, 5, 0.84); }
+.modal .row .danger-ok:hover { box-shadow: 0 0 18px rgba(255,34,68,0.40); }
+
 /* ═══════════════════════════════════════════════
    SPLASH
 ═══════════════════════════════════════════════ */
@@ -643,6 +672,9 @@ input, textarea { font-family: inherit; }
     <nav class="nav" id="nav">
       <div class="nav-head">Categories <button id="navAdd" title="New category">+</button></div>
     </nav>
+    <div class="sidebar-foot">
+      <button class="reset-btn" id="resetBtn" title="Clear all data and start over">⚠ Factory Reset</button>
+    </div>
   </aside>
 
   <!-- ── Main ── -->
@@ -705,6 +737,18 @@ input, textarea { font-family: inherit; }
     <div class="side-foot">
       <button class="star-reader" id="fStar">☆ Star</button>
       <button class="save" id="fSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Factory reset modal ── -->
+<div class="modal" id="resetModal">
+  <div class="box">
+    <h3>Factory Reset</h3>
+    <p style="font-size:13px;color:var(--ink-dim);margin:0 0 16px;line-height:1.55">This will erase <b>all saved metadata</b> — titles, categories, tags, notes, and stars. Your PDF files on disk are untouched.</p>
+    <div class="row">
+      <button id="resetCancel">Cancel</button>
+      <button class="ok danger-ok" id="resetConfirm">Reset everything</button>
     </div>
   </div>
 </div>
@@ -1169,6 +1213,18 @@ $("catCancel").onclick     = closeCatModal;
 $("catCreate").onclick     = createCat;
 $("catName").addEventListener("keydown",e=>{ if(e.key==="Enter")createCat(); });
 $("catModal").addEventListener("click",e=>{ if(e.target.id==="catModal")closeCatModal(); });
+
+$("resetBtn").onclick      = ()=>$("resetModal").classList.add("open");
+$("resetCancel").onclick   = ()=>$("resetModal").classList.remove("open");
+$("resetModal").addEventListener("click",e=>{ if(e.target.id==="resetModal")$("resetModal").classList.remove("open"); });
+$("resetConfirm").onclick  = async ()=>{
+  busy(true,"Resetting…");
+  try {
+    await new Promise((res,rej)=>{ const r=indexedDB.deleteDatabase(DB_NAME); r.onsuccess=res; r.onerror=()=>rej(r.error); });
+    localStorage.removeItem("ps-theme");
+  } catch(e){ console.error(e); }
+  location.reload();
+};
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){closeReader();closeCatModal();} });
 
 document.querySelector(".filter-bar").addEventListener("click",e=>{
