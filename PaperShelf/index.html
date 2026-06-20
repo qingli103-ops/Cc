@@ -387,19 +387,6 @@ input, textarea { font-family: inherit; }
 .btn-read:hover { box-shadow: 0 0 16px rgba(0,160,255,0.40), 0 0 32px rgba(120,0,255,0.18); }
 .btn-read:hover::before { animation-duration: 3s; filter: brightness(1.18); }
 
-/* Open in Adobe — purple tint */
-.btn-ext {
-  flex: 1; padding: 6px 8px; font-size: 11.5px; font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid rgba(100, 60, 200, 0.25);
-  background: rgba(80, 30, 180, 0.10);
-  color: #b8a0ff;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  transition: all .2s;
-}
-[data-theme="light"] .btn-ext { border-color: rgba(80,40,200,0.25); background: rgba(80,40,200,0.08); color: #5530cc; }
-.btn-ext:hover { background: rgba(100,50,220,0.20); border-color: rgba(140,80,255,0.50); color: #c8b4ff; box-shadow: 0 0 14px rgba(100,40,255,0.22); }
-[data-theme="light"] .btn-ext:hover { color: #4020cc; background: rgba(80,40,200,0.16); }
 
 /* ═══════════════════════════════════════════════
    SPLASH
@@ -458,27 +445,6 @@ input, textarea { font-family: inherit; }
 }
 .side-head strong { font-size: 13.5px; flex: 1; color: var(--ink); font-weight: 700; }
 
-/* "Open in Adobe" reader button — aurora border */
-.btn-ext-reader {
-  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
-  white-space: nowrap; color: #c0b0ff;
-  position: relative; overflow: hidden; z-index: 0;
-  background: transparent; border: none;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.btn-ext-reader::before {
-  content: ''; position: absolute; inset: -1.5px; border-radius: 9.5px; z-index: -2;
-  background: linear-gradient(135deg, var(--au2), var(--au4), var(--au5), var(--au2));
-  background-size: 300% 300%;
-  animation: aurora-spin 5s linear infinite;
-}
-.btn-ext-reader::after {
-  content: ''; position: absolute; inset: 1px; border-radius: 7px; z-index: -1;
-  background: rgba(30, 10, 70, 0.85);
-}
-[data-theme="light"] .btn-ext-reader::after { background: rgba(40, 10, 100, 0.82); }
-[data-theme="light"] .btn-ext-reader { color: #dbd0ff; }
-.btn-ext-reader:hover { box-shadow: 0 0 16px rgba(120,0,255,0.38); }
 
 .side-head .x {
   border: 1px solid var(--line); background: rgba(255,255,255,0.06);
@@ -725,8 +691,7 @@ input, textarea { font-family: inherit; }
   <div class="side">
     <div class="side-head">
       <strong>Paper details</strong>
-      <button class="btn-ext-reader" id="openExtReader">↗ Open in Adobe</button>
-      <button class="x" id="readerClose">×</button>
+<button class="x" id="readerClose">×</button>
     </div>
     <div class="side-body">
       <div class="field"><label>Title</label><textarea id="fTitle" rows="2"></textarea></div>
@@ -993,20 +958,6 @@ async function openInBrowser(fileName) {
   $("reader").classList.add("open");
 }
 
-async function openExternal(fileName) {
-  if (!dirHandle) return;
-  try {
-    const file = await getFileBlob(fileName);
-    const url  = URL.createObjectURL(file);
-    const a    = document.createElement("a");
-    a.href = url; a.download = fileName;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url), 15000);
-    const p = papers.find(x=>x.fileName===fileName);
-    if (p) { p.lastOpened=Date.now(); await idbPut("papers",p); }
-    toast(`Downloading "${fileName}" — opens in your default PDF app`);
-  } catch(e) { toast("Can't open file — it may have moved."); }
-}
 
 function updateStarBtn(on) {
   const b=$("fStar");
@@ -1196,10 +1147,6 @@ function renderGrid() {
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
             Read here
           </button>
-          <button class="btn-ext" data-ext="${esc(p.fileName)}">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Open in Adobe
-          </button>
         </div>
       </div>`;
     }).join("")}</div>
@@ -1218,7 +1165,6 @@ $("groupBy").onchange      = e=>{ groupBy=e.target.value; renderGrid(); };
 $("readerClose").onclick   = closeReader;
 $("fSave").onclick         = saveEdit;
 $("fStar").onclick         = ()=>toggleStar(editingFileName);
-$("openExtReader").onclick = ()=>{ if(editingFileName) openExternal(editingFileName); };
 $("catCancel").onclick     = closeCatModal;
 $("catCreate").onclick     = createCat;
 $("catName").addEventListener("keydown",e=>{ if(e.key==="Enter")createCat(); });
@@ -1244,8 +1190,6 @@ document.addEventListener("click",e=>{
   if (star) { e.stopPropagation(); toggleStar(star.dataset.star); return; }
   const read=e.target.closest("[data-read]");
   if (read) { openInBrowser(read.dataset.read); return; }
-  const ext=e.target.closest("[data-ext]");
-  if (ext) { openExternal(ext.dataset.ext); return; }
 });
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
